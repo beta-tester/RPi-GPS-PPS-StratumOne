@@ -92,14 +92,14 @@ grep -q StratumOne /etc/rc.local 2> /dev/null || {
 echo -e "\e[32mtweak GPS device at start up\e[0m";
 sudo sed /etc/rc.local -i -e "s/^exit 0$//";
 printf "## StratumOne
-# prepare GPS device to
-# 115200baud io rate,
-# 10 Hz update interval
 service gpsd stop
 stty -F /dev/ttyAMA0 9600
-printf \x27\x24PMTK251,115200*1F\x5Cr\x5Cn\x27 \x3E /dev/ttyAMA0
-stty -F /dev/ttyAMA0 115200
-printf \x27\x24PMTK220,100*2F\x5Cr\x5Cn\x27 \x3E /dev/ttyAMA0
+## prepare GPS device to
+## 115200baud io rate,
+## 10 Hz update interval
+#printf \x27\x24PMTK251,115200*1F\x5Cr\x5Cn\x27 \x3E /dev/ttyAMA0
+#stty -F /dev/ttyAMA0 115200
+#printf \x27\x24PMTK220,100*2F\x5Cr\x5Cn\x27 \x3E /dev/ttyAMA0
 service gpsd restart
 gpspipe -r -n 1 &
 
@@ -175,9 +175,9 @@ echo -e "\e[32mcompile ntp with PPS support\e[0m";
 sudo service ntp stop;
 sudo apt-mark hold ntp;
 sudo apt-get install libcap-dev;
-wget http://archive.ntp.org/ntp4/ntp-4.2/ntp-4.2.8p6.tar.gz;
-tar xvfz ntp-4.2.8p6.tar.gz;
-cd ntp-4.2.8p6/;
+wget http://archive.ntp.org/ntp4/ntp-4.2/ntp-4.2.8p8.tar.gz;
+tar xvfz ntp-4.2.8p8.tar.gz;
+cd ntp-4.2.8p8/;
 ./configure --enable-linuxcaps;
 make;
 sudo make install;
