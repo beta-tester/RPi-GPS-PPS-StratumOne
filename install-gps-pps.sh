@@ -197,12 +197,12 @@ driftfile /var/lib/ntp/ntp.drift
 
 # PPS(0), gpsd: /dev/pps0: Kernel-mode PPS ref-clock for the precise seconds
 # http://doc.ntp.org/current-stable/drivers/driver22.html
-server  127.127.22.0  minpoll 4  maxpoll 4
+server  127.127.22.0  minpoll 3  maxpoll 3  prefer  true
 fudge   127.127.22.0  refid PPS  flag3 1  # enable kernel PPS discipline
 
 # SHM(0), gpsd: Server from shared memory provided by gpsd
 # # http://doc.ntp.org/current-stable/drivers/driver28.html
-server  127.127.28.0  minpoll 4  maxpoll 4  prefer  true
+server  127.127.28.0  minpoll 4  maxpoll 5  prefer  true
 fudge   127.127.28.0  refid NMEA  time1 0.297  flag1 1  # 10Hz, skip diff limit
 
 # StratumOne Server
