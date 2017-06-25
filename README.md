@@ -4,7 +4,7 @@ setup a Raspberry Pi as an Stratum One NTP server.
 it is a private project i have made for myself.
 i did not keeped an eye on network security.
 
-USE IT AT YOU OWN RISK
+USE IT AT YOUR OWN RISK
 
 #requirements
 
@@ -18,10 +18,11 @@ USE IT AT YOU OWN RISK
 - Raspbian Jessie Lite (2016-03-18, https://www.raspberrypi.org/downloads/raspbian/)
 
 ## installation:
-assuming, your Raspberry Pi is running Raspbian Jessie Lite (2016-03-18),
-and has a proper connection to the internet via LAN.
-and your SD card is expanded,
-and you connected the GPS module direct to the RPi's RX/TX pins of the GPIO and the GPS PPS pin to the RPi' GPIO #4
+assuming,
+- your Raspberry Pi is running Raspbian Jessie Lite (2016-03-18),
+- and has a proper connection to the internet via LAN.
+- and your SD card is expanded,
+- and you connected the GPS module direct to the RPi's RX/TX pins of the GPIO and the GPS PPS pin to the RPi' GPIO #4
 
 1. run `bash install-gps-pps.sh` to install necessary packages ans setup Kernel PPS, GPSD, and NTP with PPS support.
 2. reboot your RPi with `sudo reboot`
