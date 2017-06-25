@@ -6,15 +6,15 @@ i did not keeped an eye on network security.
 
 USE IT AT YOUR OWN RISK
 
-#requirements
+## requirements
 
-##hardware:
+### hardware:
 - Raspberry Pi (with LAN)
 - SD card
 - working network environment with a connection to internet
 - GPS module with PPS output (Adafruit Ultimate GPS Breakout - 66 channel w/10 Hz updates - Version 3; https://www.adafruit.com/products/746)
 
-##software:
+### software:
 - Raspbian Jessie Lite (2016-03-18, https://www.raspberrypi.org/downloads/raspbian/)
 
 ## installation:
