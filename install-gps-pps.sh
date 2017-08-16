@@ -209,7 +209,7 @@ filegen  clockstats  file clockstats  type week  enable
 
 
 #enable stats
-#enable pps
+enable pps
 
 
 # PPS(0), gpsd: /dev/pps0: Kernel-mode PPS ref-clock for the precise seconds
@@ -220,7 +220,7 @@ fudge   127.127.22.0  refid PPS  time1 -0.0045  flag3 1  # enable kernel PPS dis
 # SHM(0), gpsd: Server from shared memory provided by gpsd
 # # http://doc.ntp.org/current-stable/drivers/driver28.html
 server  127.127.28.0  minpoll 4  maxpoll 5  prefer  true
-fudge   127.127.28.0  refid NMEA  time1 0.450  flag1 1  #9600baud, 1Hz: skip diff limit
+fudge   127.127.28.0  refid NMEA  time1 0.450  stratum 10  flag1 1  #9600baud, 1Hz: skip diff limit
 
 
 # Stratum1 Servers
