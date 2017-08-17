@@ -259,11 +259,11 @@ fudge   127.127.28.0  refid NMEA  time1 0.450  stratum 10  flag1 1  #9600baud, 1
 # details.  The web page <http://support.ntp.org/bin/view/Support/AccessRestrictions>
 # might also be helpful.
 #
-# Note that \"restrict\" applies to both servers and clients, so a configuration
+# Note that restrict applies to both servers and clients, so a configuration
 # that might be intended to block requests from certain clients could also end
 # up blocking replies from your own upstream servers.
 
-# By default, exchange time with everybody, but don't allow configuration.
+# By default, exchange time with everybody, but do not allow configuration.
 restrict -4 default kod notrap nomodify nopeer noquery
 restrict -6 default kod notrap nomodify nopeer noquery
 
