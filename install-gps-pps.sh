@@ -293,7 +293,7 @@ echo -e "\e[32minstall samba\e[0m";
 sudo apt-get -y install samba;
 
 [ -d "/media/share" ] || {
-echo -e "\e[32create share folder\e[0m";
+echo -e "\e[32mcreate share folder\e[0m";
 sudo mkdir -p /media/share;
 }
 
