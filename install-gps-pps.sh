@@ -208,10 +208,6 @@ filegen  peerstats  file peerstats  type week  enable
 filegen  clockstats  file clockstats  type week  enable
 
 
-#enable stats
-enable pps
-
-
 # PPS(0), gpsd: /dev/pps0: Kernel-mode PPS ref-clock for the precise seconds
 # http://doc.ntp.org/current-stable/drivers/driver22.html
 server  127.127.22.0  minpoll 3  maxpoll 3  prefer  true
