@@ -30,11 +30,11 @@ USE IT AT YOUR OWN RISK
 - GPS module with PPS output (Adafruit Ultimate GPS Breakout - 66 channel w/10 Hz updates - Version 3; https://www.adafruit.com/products/746)
 
 ### software:
-- Raspbian Jessie Lite (2017-07-05, https://www.raspberrypi.org/downloads/raspbian/)
+- Raspbian Jessie Lite (2017-08-16, https://www.raspberrypi.org/downloads/raspbian/)
 
 ## installation:
 assuming,
-- your Raspberry Pi is running Raspbian Jessie Lite (2017-07-05),
+- your Raspberry Pi is running Raspbian Jessie Lite (2017-08-18),
 - and has a proper connection to the internet via LAN.
 - and your SD card is expanded,
 - and you connected the GPS module direct to the RPi's RX/TX pins of the GPIO and the GPS PPS pin to the RPi' GPIO #4
