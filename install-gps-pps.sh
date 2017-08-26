@@ -509,7 +509,7 @@ handle_pps
 handle_ntp_tools
 
 install_ntp
-if ! (echo $(ntpd --version) | grep -q 'ntpd $NTP_VER'); then
+if ! (echo $(ntpd --version) | grep -q "ntpd $NTP_VER"); then
     compile_ntp
 fi
 
