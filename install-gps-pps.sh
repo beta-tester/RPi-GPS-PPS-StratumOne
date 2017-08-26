@@ -1,150 +1,174 @@
 #!/bin/bash
 
-
 ######################################################################
-{
-echo -e "\e[32mprepare locale to nothing (default:en)\e[0m";
-export LC_TIME=;
-export LC_MONETARY=;
-export LC_ADDRESS=;
-export LC_TELEPHONE=;
-export LC_NAME=;
-export LC_MEASUREMENT=;
-export LC_IDENTIFICATION=;
-export LC_NUMERIC=;
-export LC_PAPER=;
-export LC_CTYPE=;
-export LC_MESSAGES=;
-export LC_ALL=;
-export LANG=;
-export LANGUAGE=;
-sudo sed -i -e "s/^en_GB.UTF-8 UTF-8/\# en_GB.UTF-8 UTF-8/" /etc/locale.gen;
-sudo locale-gen --purge;
-sudo sh -c "echo '# /etc/default/locale
-LANG=
-LANGUAGE=
-' > /etc/default/locale";
-}
-
-{
-echo -e "\e[32mprepare timezone to Etc/UTC\e[0m";
-sudo sh -c "echo 'Etc/UTC' > /etc/timezone";
-sudo dpkg-reconfigure -f noninteractive tzdata;
-}
-
-######################################################################
-sudo sync \
-&& echo -e "\e[32mupdate...\e[0m" && sudo apt-get update \
-&& echo -e "\e[32mupgrade...\e[0m" && sudo apt-get -y upgrade \
-&& echo -e "\e[32mdist-upgrade...\e[0m" && sudo apt-get -y dist-upgrade \
-&& echo -e "\e[32mautoremove...\e[0m" && sudo apt-get -y --purge autoremove \
-&& echo -e "\e[32mautoclean...\e[0m" && sudo apt-get autoclean \
-&& echo -e "\e[32mDone.\e[0m" \
-&& sudo sync;
+# 2017-08-16-raspbian-stretch-lite
 
 
-################################################################################
-{
-echo -e "\e[32mprepare GPS\e[0m";
-# up to 2016-02-26-raspbian-jessie-lite.img
-echo -e "\e[32mmake boot quiet to serial port: ttyAMA0\e[0m";
-sudo sed -i -e "s/console=ttyAMA0,115200//" /boot/cmdline.txt;
+##################################################################
+NTP_VER=4.2.8p10
+##################################################################
+
+
+##################################################################
+# if a GPS module is already installed and is giving GPS feed on the GPIO-serial port,
+# it can generate error messages to the console, because the kernel try to interprete this as commands from the boot console
 sudo systemctl stop serial-getty@ttyAMA0.service;
 sudo systemctl disable serial-getty@ttyAMA0.service;
-}
-
-{
-# since 2016-03-18-raspbian-jessie-lite.img
-echo -e "\e[32mmake boot quiet to serial port: serial0\e[0m";
 sudo sed -i -e "s/console=serial0,115200//" /boot/cmdline.txt;
-sudo systemctl stop serial-getty@serial0.service;
-sudo systemctl disable serial-getty@serial0.service;
+
+
+######################################################################
+handle_locale() {
+    echo -e "\e[32mhandle_locale()\e[0m";
+
+    echo -e "\e[36m    prepare locale to nothing (default:en)\e[0m";
+    export LC_TIME=;
+    export LC_MONETARY=;
+    export LC_ADDRESS=;
+    export LC_TELEPHONE=;
+    export LC_NAME=;
+    export LC_MEASUREMENT=;
+    export LC_IDENTIFICATION=;
+    export LC_NUMERIC=;
+    export LC_PAPER=;
+    export LC_CTYPE=;
+    export LC_MESSAGES=;
+    export LC_ALL=;
+    export LANG=;
+    export LANGUAGE=;
+    sudo sed -i -e "s/^en_GB.UTF-8 UTF-8/\# en_GB.UTF-8 UTF-8/" /etc/locale.gen;
+    sudo locale-gen --purge;
+    sudo sh -c "cat << EOF  > /etc/default/locale
+# /etc/default/locale
+LANG=
+LANGUAGE=
+EOF";
 }
 
-################################################################################
-{
-echo -e "\e[32minstall gpsd\e[0m";
-sudo apt-get -y install gpsd gpsd-clients;
+######################################################################
+handle_timezone() {
+    echo -e "\e[32mhandle_timezone()\e[0m";
+
+    echo -e "\e[36m    prepare timezone to Etc/UTC\e[0m";
+    sudo sh -c "echo 'Etc/UTC' > /etc/timezone";
+    sudo dpkg-reconfigure -f noninteractive tzdata;
 }
 
-{
-echo -e "\e[32msetup gpsd\e[0m";
-sudo systemctl stop gpsd.service;
-sudo sh -c "echo '# /etc/default/gpsd
+
+######################################################################
+handle_update() {
+    echo -e "\e[32mhandle_update()\e[0m";
+
+    sudo sync \
+    && echo -e "\e[32mupdate...\e[0m" && sudo apt-get update \
+    && echo -e "\e[32mupgrade...\e[0m" && sudo apt-get -y upgrade \
+    && echo -e "\e[32mdist-upgrade...\e[0m" && sudo apt-get -y dist-upgrade \
+    && echo -e "\e[32mautoremove...\e[0m" && sudo apt-get -y --purge autoremove \
+    && echo -e "\e[32mautoclean...\e[0m" && sudo apt-get autoclean \
+    && echo -e "\e[32mDone.\e[0m" \
+    && sudo sync;
+}
+
+
+######################################################################
+handle_gps() {
+    echo -e "\e[32mhandle_gps()\e[0m";
+
+    ##################################################################
+    echo -e "\e[36m    prepare GPS\e[0m";
+    ##################################################################
+    # specific to 2017-08-16-raspbian-stretch-lite
+    echo -e "\e[36m    make boot quiet to serial port: serial0\e[0m";
+    sudo sed -i -e "s/console=serial0,115200//" /boot/cmdline.txt;
+    sudo systemctl stop serial-getty@ttyAMA0.service;
+    sudo systemctl disable serial-getty@ttyAMA0.service;
+
+    ##################################################################
+    echo -e "\e[36m    install gpsd\e[0m";
+    sudo apt-get -y install gpsd gpsd-clients;
+
+    ##################################################################
+    echo -e "\e[36m    setup gpsd\e[0m";
+    sudo systemctl stop gpsd.socket;
+    sudo systemctl stop gpsd.service;
+    sudo sh -c "cat << EOF  > /etc/default/gpsd
+# /etc/default/gpsd
 ## Stratum1
 START_DAEMON=\"true\"
 GPSD_OPTIONS=\"-n\"
 DEVICES=\"/dev/ttyAMA0\"
 USBAUTO=\"false\"
 GPSD_SOCKET=\"/var/run/gpsd.sock\"
-' > /etc/default/gpsd";
-sudo systemctl restart gpsd.service;
-}
+EOF";
+    sudo systemctl restart gpsd.service;
+    sudo systemctl restart gpsd.socket;
 
-grep -q Stratum1 /lib/systemd/system/gpsd.socket 2> /dev/null || {
-echo -e "\e[32mfix gpsd to listen not only to localhost connections\e[0m";
-sudo sed /lib/systemd/system/gpsd.socket -i -e "s/ListenStream=127.0.0.1:2947/ListenStream=0.0.0.0:2947/";
-sudo sh -c "echo ';; Stratum1
-' >> /lib/systemd/system/gpsd.socket";
-}
+    ##################################################################
+    grep -q Stratum1 /lib/systemd/system/gpsd.socket 2> /dev/null || {
+        echo -e "\e[36m    fix gpsd to listen to all connection requests\e[0m";
+        sudo sed /lib/systemd/system/gpsd.socket -i -e "s/ListenStream=127.0.0.1:2947/ListenStream=0.0.0.0:2947/";
+        sudo sh -c "cat << EOF  >> /lib/systemd/system/gpsd.socket
+;; Stratum1
+EOF";
+    }
 
-grep -q Stratum1 /etc/rc.local 2> /dev/null || {
-echo -e "\e[32mtweak GPS device at start up\e[0m";
-sudo sed /etc/rc.local -i -e "s/^exit 0$//";
-printf "## Stratum1
-sudo systemctl stop gpsd.service
+    grep -q Stratum1 /etc/rc.local 2> /dev/null || {
+        echo -e "\e[36m    tweak GPS device at start up\e[0m";
+        sudo sed /etc/rc.local -i -e "s/^exit 0$//";
+        printf "## Stratum1
+sudo systemctl stop gpsd.socket;
+sudo systemctl stop gpsd.service;
+
+# default GPS device settings at power on
 stty -F /dev/ttyAMA0 9600
-## prepare GPS device to
+
+## custom GPS device settings
 ## 115200baud io rate,
-## 10 Hz update interval
 #printf \x27\x24PMTK251,115200*1F\x5Cr\x5Cn\x27 \x3E /dev/ttyAMA0
 #stty -F /dev/ttyAMA0 115200
+## 10 Hz update interval
 #printf \x27\x24PMTK220,100*2F\x5Cr\x5Cn\x27 \x3E /dev/ttyAMA0
-sudo systemctl restart gpsd.service
+
+sudo systemctl restart gpsd.service;
+sudo systemctl restart gpsd.socket;
+
+# workaround: lets start any gps client to forct gps service to wakeup and work
 gpspipe -r -n 1 &
 
 exit 0
 " | sudo tee -a /etc/rc.local > /dev/null;
-}
+    }
 
-[ -f "/etc/dhcp/dhclient-exit-hooks.d/ntp" ] && {
-sudo rm -f /etc/dhcp/dhclient-exit-hooks.d/ntp;
-}
+    [ -f "/etc/dhcp/dhclient-exit-hooks.d/ntp" ] && {
+        sudo rm -f /etc/dhcp/dhclient-exit-hooks.d/ntp;
+    }
 
-[ -f "/etc/udev/rules.d/99-gps.rules" ] || {
-sudo sh -c "echo '## Stratum1
+    [ -f "/etc/udev/rules.d/99-gps.rules" ] || {
+        echo -e "\e[36m    create rule to create symbolic link\e[0m";
+        sudo sh -c "cat << EOF  > /etc/udev/rules.d/99-gps.rules
+## Stratum1
 KERNEL==\"pps0\",SYMLINK+=\"gpspps0\"
-KERNEL==\"ttyAMA0\", SYMLINK+=\"gps0\"' > /etc/udev/rules.d/99-gps.rules";
+KERNEL==\"ttyAMA0\", SYMLINK+=\"gps0\"
+EOF";
+    }
 }
 
-################################################################################
-{
-echo -e "\e[32minstall PPS tools\e[0m";
-sudo apt-get -y install pps-tools;
-}
 
-grep -q pps-gpio /boot/config.txt 2> /dev/null || {
-echo -e "\e[32msetup config.txt for PPS\e[0m";
-sudo sh -c "echo '# /boot/config.txt
+######################################################################
+handle_pps() {
+    echo -e "\e[32mhandle_pps()\e[0m";
+
+    ##################################################################
+    echo -e "\e[36m    install PPS tools\e[0m";
+    sudo apt-get -y install pps-tools;
+
+    ##################################################################
+    grep -q pps-gpio /boot/config.txt 2> /dev/null || {
+        echo -e "\e[36m    setup config.txt for PPS\e[0m";
+        sudo sh -c "cat << EOF  > /boot/config.txt
+# /boot/config.txt
 # https://www.raspberrypi.org/documentation/configuration/config-txt.md
 ## Stratum1
-
-[pi0]
-
-[pi1]
-#arm_freq=1000
-#core_freq=500
-#sdram_freq=600
-#over_voltage=6
-
-[pi2]
-#arm_freq=1000
-#core_freq=500
-#sdram_freq=500
-#over_voltage=2
-
-[pi3]
-
 
 [all]
 max_usb_current=1
@@ -157,45 +181,114 @@ hdmi_drive=2
 cec_osd_name=Stratum1
 
 # gps + pps + ntp settings
-# https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/overlays/README
+# https://github.com/raspberrypi/firmware/tree/master/boot/overlays
+#Name:   pps-gpio
+#Info:   Configures the pps-gpio (pulse-per-second time signal via GPIO).
+#Load:   dtoverlay=pps-gpio,<param>=<val>
+#Params: gpiopin                 Input GPIO (default "18")
+#        assert_falling_edge     When present, assert is indicated by a falling
+#                                edge, rather than by a rising edge
+# dtoverlay=pps-gpio,gpiopin=4,assert_falling_edge
 dtoverlay=pps-gpio,gpiopin=4
-' > /boot/config.txt";
+EOF";
+    }
+
+    ##################################################################
+    grep -q pps-gpio /etc/modules 2> /dev/null || {
+        echo -e "\e[36m    add pps-gpio to modules for PPS\e[0m";
+        sudo sh -c "echo 'pps-gpio' >> /etc/modules";
+    }
 }
 
-grep -q pps-gpio /etc/modules 2> /dev/null || {
-echo -e "\e[32madd pps-gpio to modules for PPS\e[0m";
-sudo sh -c "echo 'pps-gpio' >> /etc/modules";
+
+######################################################################
+handle_ntp_tools() {
+    echo -e "\e[32mhandle_ntp_tools()\e[0m";
+
+    echo -e "\e[36m    install ntp tools\e[0m";
+    sudo apt-get -y install ntpstat ntpdate;
 }
 
 
-################################################################################
-{
-echo -e "\e[32minstall ntp\e[0m";
-sudo apt-get -y install ntp ntpstat ntpdate;
+######################################################################
+install_ntp() {
+    echo -e "\e[32minstall_ntp()\e[0m";
+
+    sudo apt-get -y install ntp;
 }
 
-################################################################################
-{
-echo -e "\e[32mcompile ntp with PPS support\e[0m";
-sudo systemctl stop ntp.service;
-sudo apt-mark hold ntp;
-sudo apt-get -y install libcap-dev libssl-dev;
-wget http://archive.ntp.org/ntp4/ntp-4.2/ntp-4.2.8p10.tar.gz;
-tar xvfz ntp-4.2.8p10.tar.gz;
-cd ntp-4.2.8p10/;
-./configure --enable-linuxcaps;
-make;
-sudo make install;
-sudo cp /usr/local/bin/ntp* /usr/bin/;
-sudo cp /usr/local/sbin/ntp* /usr/sbin/;
-sudo systemctl restart ntp.service;
+
+######################################################################
+compile_ntp() {
+    echo -e "\e[32mcompile_ntp()\e[0m";
+
+    ######################################################################
+    # http://www.linuxfromscratch.org/blfs/view/svn/basicnet/ntp.html
+    # https://wiki.polaire.nl/doku.php?id=compile_ntp_on_centos7
+    # https://anonscm.debian.org/git/pkg-ntp/pkg-ntp.git/
+    echo -e "\e[36m  compile ntp with PPS support\e[0m";
+    sudo systemctl stop ntp.service;
+    sudo systemctl disable ntp.service;
+
+    ## do not remove the installes ntp package, to use its efault settings and scripts as template
+    sudo apt-mark hold ntp;
+    ##sudo apt-get -y --auto-remove purge ntp;
+
+    # download and compile ntp from source
+    sudo apt-get -y install libcap-dev libssl-dev;
+    wget http://archive.ntp.org/ntp4/ntp-4.2/ntp-$NTP_VER.tar.gz;
+    tar xvfz ntp-$NTP_VER.tar.gz;
+    cd ntp-$NTP_VER/;
+
+#    sudo groupadd  ntp
+#    sudo useradd  -c "Network Time Protocol"  -d /var/lib/ntp  -g ntp  -s /bin/false  ntp
+
+#    sed -e "s/https/http/"  -e 's/"(\\S+)"/"?([^\\s"]+)"?/'  -i scripts/update-leap/update-leap.in
+
+    ./configure CFLAGS="-O2 -g -fPIC" \
+                --prefix=/usr         \
+                --bindir=/usr/sbin    \
+                --sysconfdir=/etc     \
+                --docdir=/usr/share/doc/ntp-$NTP_VER \
+                --enable-linuxcaps \
+                --enable-ATOM \
+                --with-lineeditlibs=readline
+    make;
+    sudo make install;
+    sudo install -v  -o ntp  -g ntp  -d /var/lib/ntp;
+
+    sudo cp /usr/sbin/ntpq     /usr/bin/ntpq
+    sudo cp /usr/sbin/ntpsweep /usr/bin/ntpsweep
+    sudo cp /usr/sbin/ntpdc    /usr/bin/ntpdc
+    sudo cp /usr/sbin/ntptrace /usr/bin/ntptrace
+
+#    sudo sh -c "cat << EOF  > /etc/systemd/system/ntp.service
+#[Unit]
+#Description=Network Time Service
+#After=syslog.target ntpdate.service sntp.service
+#Conflicts=systemd-timesyncd.service
+#
+#[Service]
+#Type=forking
+#ExecStart=/usr/local/sbin/ntpd -g -u ntp:ntp
+#PrivateTmp=true
+#
+#[Install]
+#WantedBy=multi-user.target
+#EOF";
+
+    sudo systemctl enable ntp.service;
+    sudo systemctl restart ntp.service;
 }
 
-################################################################################
-{
-echo -e "\e[32msetup ntp (with gpsd, pps)\e[0m";
-sudo systemctl stop ntp.service;
-sudo sh -c "echo '# /etc/ntp.conf
+
+######################################################################
+setup_ntp() {
+    echo -e "\e[32msetup_ntp()\e[0m";
+
+    sudo systemctl stop ntp.service;
+    sudo sh -c "cat << EOF  > /etc/ntp.conf
+# /etc/ntp.conf
 ## Stratum1
 
 driftfile /var/lib/ntp/ntp.drift
@@ -208,15 +301,46 @@ filegen  peerstats  file peerstats  type week  enable
 filegen  clockstats  file clockstats  type week  enable
 
 
-# PPS(0), gpsd: /dev/pps0: Kernel-mode PPS ref-clock for the precise seconds
+# 20; NMEA(0), /dev/gpsu, /dev/gpsppsu, /dev/gpsu: Generic NMEA GPS Receiver
+# http://doc.ntp.org/current-stable/drivers/driver20.html
+#server  127.127.20.0  mode 287  prefer  true
+#fudge   127.127.20.0  refid NMEA  time1 -0.0045  time2 0.450  flag1 1
+# time1 time:     Specifies the PPS time offset calibration factor, in seconds and fraction, with default 0.0.
+# time2 time:     Specifies the serial end of line time offset calibration factor, in seconds and fraction, with default 0.0.
+# stratum number: Specifies the driver stratum, in decimal from 0 to 15, with default 0.
+# refid string:   Specifies the driver reference identifier, an ASCII string from one to four characters, with default GPS.
+# flag1 0 | 1:    Disable PPS signal processing if 0 (default); enable PPS signal processing if 1.
+# flag2 0 | 1:    If PPS signal processing is enabled, capture the pulse on the rising edge if 0 (default); capture on the falling edge if 1.
+# flag3 0 | 1:    If PPS signal processing is enabled, use the ntpd clock discipline if 0 (default); use the kernel discipline if 1.
+# flag4 0 | 1:    Obscures location in timecode: 0 for disable (default), 1 for enable.
+
+
+# 22; PPS(0), gpsd: /dev/pps0: Kernel-mode PPS ref-clock for the precise seconds
 # http://doc.ntp.org/current-stable/drivers/driver22.html
 server  127.127.22.0  minpoll 3  maxpoll 3  prefer  true
-fudge   127.127.22.0  refid PPS  time1 -0.0045  flag3 1  # enable kernel PPS discipline
+fudge   127.127.22.0  refid PPS  time1 -0.0045
+# time1 time:     Specifies the time offset calibration factor, in seconds and fraction, with default 0.0.
+# time2 time:     Not used by this driver.
+# stratum number: Specifies the driver stratum, in decimal from 0 to 15, with default 0.
+# refid string:   Specifies the driver reference identifier, an ASCII string from one to four characters, with default PPS.
+# flag1 0 | 1:    Not used by this driver.
+# flag2 0 | 1:    Specifies PPS capture on the rising (assert) pulse edge if 0 (default) or falling (clear) pulse edge if 1. Not used under Windows - if the special serialpps.sys serial port driver is installed then the leading edge will always be used.
+# flag3 0 | 1:    Controls the kernel PPS discipline: 0 for disable (default), 1 for enable. Not used under Windows - if the special serialpps.sys serial port driver is used then kernel PPS will be available and used.
+# flag4 0 | 1:    Record a timestamp once for each second if 1. Useful for constructing Allan deviation plots.
 
-# SHM(0), gpsd: Server from shared memory provided by gpsd
+
+# 28; SHM(0), gpsd: Server from shared memory provided by gpsd
 # # http://doc.ntp.org/current-stable/drivers/driver28.html
 server  127.127.28.0  minpoll 4  maxpoll 5  prefer  true
-fudge   127.127.28.0  refid NMEA  time1 0.450  stratum 10  flag1 1  #9600baud, 1Hz: skip diff limit
+fudge   127.127.28.0  refid SHM  time1 0.450  stratum 10  flag1 1
+# time1 time:     Specifies the time offset calibration factor, in seconds and fraction, with default 0.0.
+# time2 time:     Maximum allowed difference between remote and local clock, in seconds. Values  less 1.0 or greater 86400.0 are ignored, and the default value of 4hrs (14400s) is used instead. See also flag 1.
+# stratum number: Specifies the driver stratum, in decimal from 0 to 15, with default 0.
+# refid string:   Specifies the driver reference identifier, an ASCII string from one to four characters, with default SHM.
+# flag1 0 | 1:    Skip the difference limit check if set. Useful for systems where the RTC backup cannot keep the time over long periods without power and the SHM clock must be able to force long-distance initial jumps. Check the difference limit if cleared (default).
+# flag2 0 | 1:    Not used by this driver.
+# flag3 0 | 1:    Not used by this driver.
+# flag4 0 | 1:    If flag4 is set, clockstats records will be written when the driver is polled.
 
 
 # Stratum1 Servers
@@ -280,24 +404,34 @@ restrict ::1
 # next lines.  Please do this only if you trust everybody on the network!
 #disable auth
 #broadcastclient
-' > /etc/ntp.conf";
-sudo systemctl restart ntp.service;
+EOF";
+    sudo systemctl restart ntp.service;
 }
+
 
 ######################################################################
-echo -e "\e[32minstall samba\e[0m";
-sudo apt-get -y install samba;
+handle_samba() {
+    echo -e "\e[32mhandle_samba()\e[0m";
 
-[ -d "/media/share" ] || {
-echo -e "\e[32mcreate share folder\e[0m";
-sudo mkdir -p /media/share;
-}
+    ##################################################################
+    echo -e "\e[36m  install samba\e[0m";
+    sudo apt-get -y install samba;
 
-grep -q Stratum1 /etc/samba/smb.conf 2> /dev/null || {
-echo -e "\e[32msetup samba\e[0m";
-sudo sed -i /etc/samba/smb.conf -n -e "1,/#======================= Share Definitions =======================/p";
-sudo sh -c "echo '
+    ##################################################################
+    [ -d "/media/share" ] || {
+        echo -e "\e[36m  create share folder\e[0m";
+        sudo mkdir -p /media/share;
+    }
+
+    ##################################################################
+    grep -q Stratum1 /etc/samba/smb.conf 2> /dev/null || {
+        echo -e "\e[36m  setup samba\e[0m";
+        sudo systemctl stop smb.service;
+        sudo sed -i /etc/samba/smb.conf -n -e "1,/#======================= Share Definitions =======================/p";
+        sudo sh -c "cat << EOF  >> /etc/samba/smb.conf
+
 ## Stratum1
+
 [share]
   comment = Share
   path = /media/share/
@@ -313,7 +447,7 @@ sudo sh -c "echo '
   force user = root
   force group = root
 
-  [ntpstats]
+[ntpstats]
   comment = NTP Statistics
   path = /var/log/ntpstats/
   public = yes
@@ -327,31 +461,64 @@ sudo sh -c "echo '
   force directory mask = 0755
   force user = root
   force group = root
-' >> /etc/samba/smb.conf";
-sudo systemctl restart smbd.service;
+EOF";
+        sudo systemctl restart smbd.service;
+    }
 }
 
 
 ######################################################################
-grep -q eth0 /etc/dhcpcd.conf || {
-echo -e "\e[32msetup dhcpcd.conf\e[0m";
-sudo sh -c "echo '## Stratum1
+handle_dhcpcd() {
+    echo -e "\e[32mhandle_dhcpcd()\e[0m";
+
+    grep -q Stratum1 /etc/dhcpcd.conf || {
+        echo -e "\e[36m    setup dhcpcd.conf\e[0m";
+        sudo sh -c "cat << EOF  >> /etc/dhcpcd.conf
+## Stratum1
 #interface eth0
-#static ip_address=192.168.100.161/24
-#static routers=192.168.100.23
-#static domain_name_servers=192.168.100.23
-' >> /etc/dhcpcd.conf";
+#static ip_address=192.168.1.161/24
+#static routers=192.168.1.1
+#static domain_name_servers=192.168.1.1
+EOF";
+    }
 }
 
 
-################################################################################
+######################################################################
+## test commands
+######################################################################
 #sudo gpsd /dev/ttyAMA0 -n -F /var/run/gpsd.sock
 #sudo killall gpsd
 #sudo dpkg-reconfigure gpsd
 #minicom -b 9600 -o -D /dev/ttyAMA0
 #sudo ppstest /dev/pps0
 #ntpq -crv -pn
-################################################################################
+#cgps
+#xgps
+#watch -n 10 "sh -c 'ntpstat; ntpq -p -crv;'"
+######################################################################
 
+
+handle_locale
+handle_timezone
+
+handle_update
+
+handle_gps
+handle_pps
+handle_ntp_tools
+
+install_ntp
+if ! (echo $(ntpd --version) | grep -q 'ntpd $NTP_VER'); then
+    compile_ntp
+fi
+
+setup_ntp
+
+handle_samba
+handle_dhcpcd
+
+
+######################################################################
 echo -e "\e[32mDone.\e[0m";
 echo -e "\e[1;31mPlease reboot\e[0m";
