@@ -1,8 +1,10 @@
 #!/bin/bash
 
 ######################################################################
-# 2017-08-16-raspbian-stretch-lite
+# 2017-09-07-raspbian-stretch-lite
 
+#USE_TIME_SERVICE=ntp
+USE_TIME_SERVICE=chrony
 
 ##################################################################
 NTP_VER=4.2.8p10
@@ -21,27 +23,28 @@ sudo sed -i -e "s/console=serial0,115200//" /boot/cmdline.txt;
 handle_locale() {
     echo -e "\e[32mhandle_locale()\e[0m";
 
-    echo -e "\e[36m    prepare locale to nothing (default:en)\e[0m";
-    export LC_TIME=;
-    export LC_MONETARY=;
-    export LC_ADDRESS=;
-    export LC_TELEPHONE=;
-    export LC_NAME=;
-    export LC_MEASUREMENT=;
-    export LC_IDENTIFICATION=;
-    export LC_NUMERIC=;
-    export LC_PAPER=;
-    export LC_CTYPE=;
-    export LC_MESSAGES=;
-    export LC_ALL=;
-    export LANG=;
-    export LANGUAGE=;
+    echo -e "\e[36m    prepare locale to nothing (default:C.UTF-8)\e[0m";
+    export LC_TIME=C.UTF-8;
+    export LC_MONETARY=C.UTF-8;
+    export LC_ADDRESS=C.UTF-8;
+    export LC_TELEPHONE=C.UTF-8;
+    export LC_NAME=C.UTF-8;
+    export LC_MEASUREMENT=C.UTF-8;
+    export LC_IDENTIFICATION=C.UTF-8;
+    export LC_NUMERIC=C.UTF-8;
+    export LC_PAPER=C.UTF-8;
+    export LC_CTYPE=C.UTF-8;
+    export LC_MESSAGES=C.UTF-8;
+    export LC_ALL=C.UTF-8;
+    export LANG=C.UTF-8;
+    export LANGUAGE=C.UTF-8;
     sudo sed -i -e "s/^en_GB.UTF-8 UTF-8/\# en_GB.UTF-8 UTF-8/" /etc/locale.gen;
-    sudo locale-gen --purge;
+    sudo LC_ALL=C.UTF-8 locale-gen --purge;
     sudo sh -c "cat << EOF  > /etc/default/locale
 # /etc/default/locale
-LANG=
-LANGUAGE=
+LANG=C.UTF-8
+LANGUAGE=C.UTF-8
+LC_ALL=C.UTF-8
 EOF";
 }
 
@@ -201,6 +204,7 @@ EOF";
 }
 
 
+######################################################################
 ######################################################################
 handle_ntp_tools() {
     echo -e "\e[32mhandle_ntp_tools()\e[0m";
@@ -410,6 +414,113 @@ EOF";
 
 
 ######################################################################
+disable_ntp() {
+    echo -e "\e[32mdisable_ntp()\e[0m";
+    sudo systemctl stop ntp.service 1>/dev/null 2>/dev/null;
+    sudo systemctl disable ntp.service 1>/dev/null 2>/dev/null;
+}
+
+
+
+######################################################################
+######################################################################
+install_chrony() {
+    echo -e "\e[32minstall_chrony()\e[0m";
+
+    sudo apt-get -y install chrony;
+}
+
+
+######################################################################
+setup_chrony() {
+    echo -e "\e[32msetup_chrony()\e[0m";
+
+    sudo systemctl stop chronyd.service;
+    sudo sh -c "cat << EOF  > /etc/chrony/chrony.conf
+# /etc/chrony/chrony.conf
+## Stratum1
+
+
+# Welcome to the chrony configuration file. See chrony.conf(5) for more
+# information about usuable directives.
+
+
+# PPS: /dev/pps0: Kernel-mode PPS ref-clock for the precise seconds
+refclock  PPS /dev/pps0  refid PPS   lock NMEA  trust  prefer
+
+# SHM(0), gpsd: Server from shared memory provided by gpsd
+refclock  SHM 0          refid NMEA  offset 0.5  delay 0.2  trust  require
+
+
+# allow to act as ntp server to any ntp client
+allow
+
+
+# Stratum1 Servers
+# https://www.meinbergglobal.com/english/glossary/public-time-server.htm
+#
+## Physikalisch-Technische Bundesanstalt (PTB), Braunschweig, Germany
+#server  ptbtime1.ptb.de  iburst  noselect
+#server  ptbtime2.ptb.de  iburst  noselect
+#server  ptbtime3.ptb.de  iburst  noselect
+#
+## Royal Observatory of Belgium
+#server  ntp1.oma.be  iburst  noselect
+#server  ntp2.oma.be  iburst  noselect
+#
+## Unizeto Technologies S.A., Szczecin, Polska
+#server  ntp.certum.pl  iburst  noselect
+#
+## SP Swedish National Testing and Research Institute, Boras, Sweden
+#server  ntp2.sp.se  iburst  noselect
+
+# Other NTP Servers
+#pool  de.pool.ntp.org  iburst  noselect
+
+
+# This directive specify the location of the file containing ID/key pairs for
+# NTP authentication.
+keyfile /etc/chrony/chrony.keys
+
+# This directive specify the file into which chronyd will store the rate
+# information.
+driftfile /var/lib/chrony/chrony.drift
+
+# Uncomment the following line to turn logging on.
+#log tracking measurements statistics
+
+# Log files location.
+logdir /var/log/chrony
+
+# Stop bad estimates upsetting machine clock.
+maxupdateskew 100.0
+
+# This directive tells 'chronyd' to parse the 'adjtime' file to find out if the
+# real-time clock keeps local time or UTC. It overrides the 'rtconutc' directive.
+hwclockfile /etc/adjtime
+
+# This directive enables kernel synchronisation (every 11 minutes) of the
+# real-time clock. Note that it can’t be used along with the 'rtcfile' directive.
+rtcsync
+
+# Step the system clock instead of slewing it if the adjustment is larger than
+# one second, but only in the first three clock updates.
+makestep 1 3
+EOF";
+    sudo systemctl restart chronyd.service;
+}
+
+
+######################################################################
+disable_chrony() {
+    echo -e "\e[32mdisable_chrony()\e[0m";
+    sudo systemctl stop chronyd.service 1>/dev/null 2>/dev/null;
+    sudo systemctl disable chronyd.service 1>/dev/null 2>/dev/null;
+}
+
+
+
+######################################################################
 handle_samba() {
     echo -e "\e[32mhandle_samba()\e[0m";
 
@@ -447,20 +558,20 @@ handle_samba() {
   force user = root
   force group = root
 
-[ntpstats]
-  comment = NTP Statistics
-  path = /var/log/ntpstats/
-  public = yes
-  only guest = yes
-  browseable = yes
-  read only = yes
-  writeable = no
-  create mask = 0644
-  directory mask = 0755
-  force create mask = 0644
-  force directory mask = 0755
-  force user = root
-  force group = root
+#[ntpstats]
+#  comment = NTP Statistics
+#  path = /var/log/ntpstats/
+#  public = yes
+#  only guest = yes
+#  browseable = yes
+#  read only = yes
+#  writeable = no
+#  create mask = 0644
+#  directory mask = 0755
+#  force create mask = 0644
+#  force directory mask = 0755
+#  force user = root
+#  force group = root
 EOF";
         sudo systemctl restart smbd.service;
     }
@@ -492,10 +603,16 @@ EOF";
 #sudo dpkg-reconfigure gpsd
 #minicom -b 9600 -o -D /dev/ttyAMA0
 #sudo ppstest /dev/pps0
-#ntpq -crv -pn
 #cgps
 #xgps
+#
+#ntpq -crv -pn
 #watch -n 10 "sh -c 'ntpstat; ntpq -p -crv;'"
+#
+#chronyc sources
+#chronyc sourcestats
+#chronyc tracking
+#watch -n 10 chrony tracking
 ######################################################################
 
 
@@ -506,14 +623,23 @@ handle_update
 
 handle_gps
 handle_pps
-handle_ntp_tools
 
-install_ntp
-if ! (echo $(ntpd --version) | grep -q "ntpd $NTP_VER"); then
-    compile_ntp
-fi
 
-setup_ntp
+if [ "$USE_TIME_SERVICE" == "chrony" ]; then
+    disable_ntp;
+    install_chrony;
+    setup_chrony;
+else
+    disable_chrony;
+    handle_ntp_tools;
+    install_ntp;
+    if ! ( echo $(ntpd --version;) | grep -q "ntpd $NTP_VER"; ); then
+        ntpd --version;
+        #compile_ntp
+    fi
+    setup_ntp;
+if
+
 
 handle_samba
 handle_dhcpcd
