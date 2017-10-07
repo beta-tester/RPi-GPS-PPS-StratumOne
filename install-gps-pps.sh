@@ -99,7 +99,7 @@ handle_gps() {
 ## Stratum1
 START_DAEMON=\"true\"
 GPSD_OPTIONS=\"-n\"
-DEVICES=\"/dev/ttyAMA0\"
+DEVICES=\"/dev/ttyAMA0 /dev/pps0\"
 USBAUTO=\"false\"
 GPSD_SOCKET=\"/var/run/gpsd.sock\"
 EOF";
@@ -333,10 +333,10 @@ fudge   127.127.22.0  refid PPS  time1 -0.0045
 # flag4 0 | 1:    Record a timestamp once for each second if 1. Useful for constructing Allan deviation plots.
 
 
-# 28; SHM(0), gpsd: Server from shared memory provided by gpsd
+# 28; SHM(0), gpsd: NMEA data from shared memory provided by gpsd
 # # http://doc.ntp.org/current-stable/drivers/driver28.html
 server  127.127.28.0  minpoll 4  maxpoll 5  prefer  true
-fudge   127.127.28.0  refid SHM  time1 0.450  stratum 10  flag1 1
+fudge   127.127.28.0  refid SHM0  time1 0.450  stratum 10  flag1 1
 # time1 time:     Specifies the time offset calibration factor, in seconds and fraction, with default 0.0.
 # time2 time:     Maximum allowed difference between remote and local clock, in seconds. Values  less 1.0 or greater 86400.0 are ignored, and the default value of 4hrs (14400s) is used instead. See also flag 1.
 # stratum number: Specifies the driver stratum, in decimal from 0 to 15, with default 0.
@@ -345,6 +345,12 @@ fudge   127.127.28.0  refid SHM  time1 0.450  stratum 10  flag1 1
 # flag2 0 | 1:    Not used by this driver.
 # flag3 0 | 1:    Not used by this driver.
 # flag4 0 | 1:    If flag4 is set, clockstats records will be written when the driver is polled.
+
+
+# 28; SHM(2), gpsd: PPS data from shared memory provided by gpsd
+# # http://doc.ntp.org/current-stable/drivers/driver28.html
+server  127.127.28.2  minpoll 3  maxpoll 3  true
+fudge   127.127.28.2  refid SHM2  stratum 1
 
 
 # Stratum1 Servers
@@ -440,20 +446,34 @@ setup_chrony() {
 # /etc/chrony/chrony.conf
 ## Stratum1
 
+# https://chrony.tuxfamily.org/documentation.html
+# http://www.catb.org/gpsd/gpsd-time-service-howto.html#_feeding_chrony_from_gpsd
+# gspd is looking for
+# /var/run/chrony.pps0.sock
+# /var/run/chrony.ttyAMA0.sock
+
 
 # Welcome to the chrony configuration file. See chrony.conf(5) for more
 # information about usuable directives.
 
 
 # PPS: /dev/pps0: Kernel-mode PPS ref-clock for the precise seconds
-refclock  PPS /dev/pps0  refid PPS   lock NMEA  trust  prefer
+refclock  PPS /dev/pps0  refid PPS  precision 1e-9  lock NMEA  poll 3  trust  prefer
 
-# SHM(0), gpsd: Server from shared memory provided by gpsd
-refclock  SHM 0          refid NMEA  offset 0.5  delay 0.2  trust  require
+# SHM(2), gpsd: PPS data from shared memory provided by gpsd
+refclock  SHM 2  refid PPSx  precision 1e-9  poll 3  trust
 
+# SOCK, gpsd: PPS data from socket provided by gpsd
+refclock  SOCK /var/run/chrony.pps0.sock  refid PPSy  precision 1e-9  poll 3  trust
 
-# allow to act as ntp server to any ntp client
+# SHM(0), gpsd: NMEA data from shared memory provided by gpsd
+refclock  SHM 0  refid NMEA  precision 1e-3  offset 0.5  delay 0.2  poll 3  trust  require
+
+# any NTP clients are allowed to access the NTP server.
 allow
+
+# allows to appear synchronised to NTP clients, even when it is not.
+local
 
 
 # Stratum1 Servers
@@ -558,20 +578,21 @@ handle_samba() {
   force user = root
   force group = root
 
-#[ntpstats]
-#  comment = NTP Statistics
+[ntpstats]
+  comment = NTP Statistics
 #  path = /var/log/ntpstats/
-#  public = yes
-#  only guest = yes
-#  browseable = yes
-#  read only = yes
-#  writeable = no
-#  create mask = 0644
-#  directory mask = 0755
-#  force create mask = 0644
-#  force directory mask = 0755
-#  force user = root
-#  force group = root
+  path = /var/log/chrony/
+  public = yes
+  only guest = yes
+  browseable = yes
+  read only = yes
+  writeable = no
+  create mask = 0644
+  directory mask = 0755
+  force create mask = 0644
+  force directory mask = 0755
+  force user = root
+  force group = root
 EOF";
         sudo systemctl restart smbd.service;
     }
@@ -598,13 +619,20 @@ EOF";
 ######################################################################
 ## test commands
 ######################################################################
-#sudo gpsd /dev/ttyAMA0 -n -F /var/run/gpsd.sock
-#sudo killall gpsd
-#sudo dpkg-reconfigure gpsd
-#minicom -b 9600 -o -D /dev/ttyAMA0
+#dmesg | grep pps
 #sudo ppstest /dev/pps0
+#sudo ppswatch -a /dev/pps0
+#
+#sudo gpsd -D 5 -N -n /dev/ttyAMA0 /dev/pps0 -F /var/run/gpsd.sock
+#sudo systemctl stop gpsd.*
+#sudo killall -9 gpsd
+#sudo dpkg-reconfigure -plow gpsd
+#minicom -b 9600 -o -D /dev/ttyAMA0
 #cgps
 #xgps
+#gpsmon
+#ipcs -m
+#ntpshmmon
 #
 #ntpq -crv -pn
 #watch -n 10 "sh -c 'ntpstat; ntpq -p -crv;'"
@@ -612,7 +640,7 @@ EOF";
 #chronyc sources
 #chronyc sourcestats
 #chronyc tracking
-#watch -n 10 chrony tracking
+#watch -n 10 -p chronyc -m sources tracking
 ######################################################################
 
 
