@@ -617,6 +617,15 @@ EOF";
 
 
 ######################################################################
+disable_timesyncd() {
+    echo -e "\e[32mdisable_timesyncd()\e[0m";
+    sudo systemctl stop systemd-timesyncd
+    sudo systemctl daemon-reload
+    sudo systemctl disable systemd-timesyncd
+}
+
+
+######################################################################
 ## test commands
 ######################################################################
 #dmesg | grep pps
@@ -652,6 +661,7 @@ handle_update
 handle_gps
 handle_pps
 
+disable_timesyncd;
 
 if [ "$USE_TIME_SERVICE" == "chrony" ]; then
     disable_ntp;
