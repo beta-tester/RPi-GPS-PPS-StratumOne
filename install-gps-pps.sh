@@ -676,7 +676,7 @@ else
         #compile_ntp
     fi
     setup_ntp;
-if
+fi
 
 
 handle_samba
