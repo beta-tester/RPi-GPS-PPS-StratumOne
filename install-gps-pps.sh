@@ -586,6 +586,9 @@ handle_samba() {
         sudo systemctl stop smb.service;
         sudo sed -i /etc/samba/smb.conf -n -e "1,/#======================= Share Definitions =======================/p";
         sudo sh -c "cat << EOF  >> /etc/samba/smb.conf
+[global]
+# https://www.samba.org/samba/security/CVE-2017-14746.html
+server min protocol = SMB2
 
 ## Stratum1
 
@@ -599,8 +602,8 @@ handle_samba() {
   writeable = yes
   create mask = 0644
   directory mask = 0755
-  force create mask = 0644
-  force directory mask = 0755
+  force create mode = 0644
+  force directory mode = 0755
   force user = root
   force group = root
 
@@ -615,8 +618,8 @@ handle_samba() {
   writeable = no
   create mask = 0644
   directory mask = 0755
-  force create mask = 0644
-  force directory mask = 0755
+  force create mode = 0644
+  force directory mode = 0755
   force user = root
   force group = root
 EOF";
