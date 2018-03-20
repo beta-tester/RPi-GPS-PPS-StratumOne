@@ -1,14 +1,7 @@
 #!/bin/bash
 
 ######################################################################
-# 2017-09-07-raspbian-stretch-lite
-
-#USE_TIME_SERVICE=ntp
-USE_TIME_SERVICE=chrony
-
-##################################################################
-NTP_VER=4.2.8p10
-##################################################################
+# 2018-03-13-raspbian-stretch-lite
 
 
 ##################################################################
@@ -232,220 +225,6 @@ EOF";
 
 ######################################################################
 ######################################################################
-handle_ntp_tools() {
-    echo -e "\e[32mhandle_ntp_tools()\e[0m";
-
-    echo -e "\e[36m    install ntp tools\e[0m";
-    sudo apt-get -y install ntpstat ntpdate;
-}
-
-
-######################################################################
-install_ntp() {
-    echo -e "\e[32minstall_ntp()\e[0m";
-
-    sudo apt-get -y install ntp;
-}
-
-
-######################################################################
-compile_ntp() {
-    echo -e "\e[32mcompile_ntp()\e[0m";
-
-    ######################################################################
-    # http://www.linuxfromscratch.org/blfs/view/svn/basicnet/ntp.html
-    # https://wiki.polaire.nl/doku.php?id=compile_ntp_on_centos7
-    # https://anonscm.debian.org/git/pkg-ntp/pkg-ntp.git/
-    echo -e "\e[36m  compile ntp with PPS support\e[0m";
-    sudo systemctl stop ntp.service;
-    sudo systemctl disable ntp.service;
-
-    ## do not remove the installes ntp package, to use its efault settings and scripts as template
-    sudo apt-mark hold ntp;
-    ##sudo apt-get -y --auto-remove purge ntp;
-
-    # download and compile ntp from source
-    sudo apt-get -y install libcap-dev libssl-dev;
-    wget http://archive.ntp.org/ntp4/ntp-4.2/ntp-$NTP_VER.tar.gz;
-    tar xvfz ntp-$NTP_VER.tar.gz;
-    cd ntp-$NTP_VER/;
-
-#    sudo groupadd  ntp
-#    sudo useradd  -c "Network Time Protocol"  -d /var/lib/ntp  -g ntp  -s /bin/false  ntp
-
-#    sed -e "s/https/http/"  -e 's/"(\\S+)"/"?([^\\s"]+)"?/'  -i scripts/update-leap/update-leap.in
-
-    ./configure CFLAGS="-O2 -g -fPIC" \
-                --prefix=/usr         \
-                --bindir=/usr/sbin    \
-                --sysconfdir=/etc     \
-                --docdir=/usr/share/doc/ntp-$NTP_VER \
-                --enable-linuxcaps \
-                --enable-ATOM \
-                --with-lineeditlibs=readline
-    make;
-    sudo make install;
-    sudo install -v  -o ntp  -g ntp  -d /var/lib/ntp;
-
-    sudo cp /usr/sbin/ntpq     /usr/bin/ntpq
-    sudo cp /usr/sbin/ntpsweep /usr/bin/ntpsweep
-    sudo cp /usr/sbin/ntpdc    /usr/bin/ntpdc
-    sudo cp /usr/sbin/ntptrace /usr/bin/ntptrace
-
-#    sudo sh -c "cat << EOF  > /etc/systemd/system/ntp.service
-#[Unit]
-#Description=Network Time Service
-#After=syslog.target ntpdate.service sntp.service
-#Conflicts=systemd-timesyncd.service
-#
-#[Service]
-#Type=forking
-#ExecStart=/usr/local/sbin/ntpd -g -u ntp:ntp
-#PrivateTmp=true
-#
-#[Install]
-#WantedBy=multi-user.target
-#EOF";
-
-    sudo systemctl enable ntp.service;
-    sudo systemctl restart ntp.service;
-}
-
-
-######################################################################
-setup_ntp() {
-    echo -e "\e[32msetup_ntp()\e[0m";
-
-    sudo systemctl stop ntp.service;
-    sudo sh -c "cat << EOF  > /etc/ntp.conf
-# /etc/ntp.conf
-## Stratum1
-
-driftfile /var/lib/ntp/ntp.drift
-
-# Enable this if you want statistics to be logged.
-statsdir /var/log/ntpstats/
-statistics loopstats peerstats clockstats
-filegen  loopstats  file loopstats  type week  enable
-filegen  peerstats  file peerstats  type week  enable
-filegen  clockstats  file clockstats  type week  enable
-
-
-# 20; NMEA(0), /dev/gpsu, /dev/gpsppsu, /dev/gpsu: Generic NMEA GPS Receiver
-# http://doc.ntp.org/current-stable/drivers/driver20.html
-#server  127.127.20.0  mode 287  prefer  true
-#fudge   127.127.20.0  refid NMEA  time1 -0.0045  time2 0.450  flag1 1
-# time1 time:     Specifies the PPS time offset calibration factor, in seconds and fraction, with default 0.0.
-# time2 time:     Specifies the serial end of line time offset calibration factor, in seconds and fraction, with default 0.0.
-# stratum number: Specifies the driver stratum, in decimal from 0 to 15, with default 0.
-# refid string:   Specifies the driver reference identifier, an ASCII string from one to four characters, with default GPS.
-# flag1 0 | 1:    Disable PPS signal processing if 0 (default); enable PPS signal processing if 1.
-# flag2 0 | 1:    If PPS signal processing is enabled, capture the pulse on the rising edge if 0 (default); capture on the falling edge if 1.
-# flag3 0 | 1:    If PPS signal processing is enabled, use the ntpd clock discipline if 0 (default); use the kernel discipline if 1.
-# flag4 0 | 1:    Obscures location in timecode: 0 for disable (default), 1 for enable.
-
-
-# 22; PPS(0), gpsd: /dev/pps0: Kernel-mode PPS ref-clock for the precise seconds
-# http://doc.ntp.org/current-stable/drivers/driver22.html
-server  127.127.22.0  minpoll 3  maxpoll 3  prefer  true
-fudge   127.127.22.0  refid PPS  time1 -0.0045
-# time1 time:     Specifies the time offset calibration factor, in seconds and fraction, with default 0.0.
-# time2 time:     Not used by this driver.
-# stratum number: Specifies the driver stratum, in decimal from 0 to 15, with default 0.
-# refid string:   Specifies the driver reference identifier, an ASCII string from one to four characters, with default PPS.
-# flag1 0 | 1:    Not used by this driver.
-# flag2 0 | 1:    Specifies PPS capture on the rising (assert) pulse edge if 0 (default) or falling (clear) pulse edge if 1. Not used under Windows - if the special serialpps.sys serial port driver is installed then the leading edge will always be used.
-# flag3 0 | 1:    Controls the kernel PPS discipline: 0 for disable (default), 1 for enable. Not used under Windows - if the special serialpps.sys serial port driver is used then kernel PPS will be available and used.
-# flag4 0 | 1:    Record a timestamp once for each second if 1. Useful for constructing Allan deviation plots.
-
-
-# 28; SHM(0), gpsd: NMEA data from shared memory provided by gpsd
-# # http://doc.ntp.org/current-stable/drivers/driver28.html
-server  127.127.28.0  minpoll 4  maxpoll 5  prefer  true
-fudge   127.127.28.0  refid SHM0  time1 0.450  stratum 10  flag1 1
-# time1 time:     Specifies the time offset calibration factor, in seconds and fraction, with default 0.0.
-# time2 time:     Maximum allowed difference between remote and local clock, in seconds. Values  less 1.0 or greater 86400.0 are ignored, and the default value of 4hrs (14400s) is used instead. See also flag 1.
-# stratum number: Specifies the driver stratum, in decimal from 0 to 15, with default 0.
-# refid string:   Specifies the driver reference identifier, an ASCII string from one to four characters, with default SHM.
-# flag1 0 | 1:    Skip the difference limit check if set. Useful for systems where the RTC backup cannot keep the time over long periods without power and the SHM clock must be able to force long-distance initial jumps. Check the difference limit if cleared (default).
-# flag2 0 | 1:    Not used by this driver.
-# flag3 0 | 1:    Not used by this driver.
-# flag4 0 | 1:    If flag4 is set, clockstats records will be written when the driver is polled.
-
-
-# 28; SHM(2), gpsd: PPS data from shared memory provided by gpsd
-# # http://doc.ntp.org/current-stable/drivers/driver28.html
-server  127.127.28.2  minpoll 3  maxpoll 3  true
-fudge   127.127.28.2  refid SHM2  stratum 1
-
-
-# Stratum1 Servers
-# https://www.meinbergglobal.com/english/glossary/public-time-server.htm
-#
-## Physikalisch-Technische Bundesanstalt (PTB), Braunschweig, Germany
-#server  ptbtime1.ptb.de  iburst  noselect
-#server  ptbtime2.ptb.de  iburst  noselect
-#server  ptbtime3.ptb.de  iburst  noselect
-#
-## Royal Observatory of Belgium
-#server  ntp1.oma.be  iburst  noselect
-#server  ntp2.oma.be  iburst  noselect
-#
-## Unizeto Technologies S.A., Szczecin, Polska
-#server  ntp.certum.pl  iburst  noselect
-#
-## SP Swedish National Testing and Research Institute, Boras, Sweden
-#server  ntp1.sp.se  iburst  noselect
-#server  ntp2.sp.se  iburst  noselect
-
-
-# You do need to talk to an NTP server or two (or three).
-#server ntp.your-provider.example
-
-# pool.ntp.org maps to about 1000 low-stratum NTP servers.  Your server will
-# pick a different set every time it starts up.  Please consider joining the
-# pool: <http://www.pool.ntp.org/join.html>
-#server  0.debian.pool.ntp.org  iburst
-#server  1.debian.pool.ntp.org  iburst
-#server  2.debian.pool.ntp.org  iburst
-#server  3.debian.pool.ntp.org  iburst
-
-
-# Access control configuration; see /usr/share/doc/ntp-doc/html/accopt.html for
-# details.  The web page <http://support.ntp.org/bin/view/Support/AccessRestrictions>
-# might also be helpful.
-#
-# Note that restrict applies to both servers and clients, so a configuration
-# that might be intended to block requests from certain clients could also end
-# up blocking replies from your own upstream servers.
-
-# By default, exchange time with everybody, but do not allow configuration.
-restrict -4 default kod notrap nomodify nopeer noquery
-restrict -6 default kod notrap nomodify nopeer noquery
-
-# Local users may interrogate the ntp server more closely.
-restrict 127.0.0.1
-restrict ::1
-
-# Clients from this (example!) subnet have unlimited access, but only if
-# cryptographically authenticated.
-#restrict 192.168.123.0 mask 255.255.255.0 notrust
-
-
-# If you want to provide time to your local subnet, change the next line.
-# (Again, the address is an example only.)
-#broadcast 192.168.123.255
-
-# If you want to listen to time broadcasts on your local subnet, de-comment the
-# next lines.  Please do this only if you trust everybody on the network!
-#disable auth
-#broadcastclient
-EOF";
-    sudo systemctl restart ntp.service;
-}
-
-
-######################################################################
 disable_ntp() {
     echo -e "\e[32mdisable_ntp()\e[0m";
     sudo systemctl stop ntp.service 1>/dev/null 2>/dev/null;
@@ -609,7 +388,6 @@ server min protocol = SMB2
 
 [ntpstats]
   comment = NTP Statistics
-#  path = /var/log/ntpstats/
   path = /var/log/chrony/
   public = yes
   only guest = yes
@@ -672,9 +450,6 @@ disable_timesyncd() {
 #ipcs -m
 #ntpshmmon
 #
-#ntpq -crv -pn
-#watch -n 10 "sh -c 'ntpstat; ntpq -p -crv;'"
-#
 #chronyc sources
 #chronyc sourcestats
 #chronyc tracking
@@ -691,22 +466,10 @@ handle_gps
 handle_pps
 
 disable_timesyncd;
+disable_ntp;
 
-if [ "$USE_TIME_SERVICE" == "chrony" ]; then
-    disable_ntp;
-    install_chrony;
-    setup_chrony;
-else
-    disable_chrony;
-    handle_ntp_tools;
-    install_ntp;
-    if ! ( echo $(ntpd --version;) | grep -q "ntpd $NTP_VER"; ); then
-        ntpd --version;
-        #compile_ntp
-    fi
-    setup_ntp;
-fi
-
+install_chrony;
+setup_chrony;
 
 handle_samba
 handle_dhcpcd
