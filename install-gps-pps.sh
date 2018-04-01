@@ -164,9 +164,30 @@ handle_pps() {
         sudo sh -c "cat << EOF  > /boot/config.txt
 # /boot/config.txt
 # https://www.raspberrypi.org/documentation/configuration/config-txt.md
+# https://github.com/raspberrypi/firmware/tree/master/boot/overlays
 ## Stratum1
 
+# gps + pps + ntp settings
+
+[pi3]
+#Name:   pi3-disable-bt
+#Info:   Disable Pi3 Bluetooth and restore UART0/ttyAMA0 over GPIOs 14 & 15
+#        N.B. To disable the systemd service that initialises the modem so it
+#        doesn't use the UART, use 'sudo systemctl disable hciuart'.
+#Load:   dtoverlay=pi3-disable-bt
+#Params: <None>
+dtoverlay=pi3-disable-bt
+
 [all]
+#Name:   pps-gpio
+#Info:   Configures the pps-gpio (pulse-per-second time signal via GPIO).
+#Load:   dtoverlay=pps-gpio,<param>=<val>
+#Params: gpiopin                 Input GPIO (default "18")
+#        assert_falling_edge     When present, assert is indicated by a falling
+#                                edge, rather than by a rising edge
+# dtoverlay=pps-gpio,gpiopin=4,assert_falling_edge
+dtoverlay=pps-gpio,gpiopin=4
+
 max_usb_current=1
 force_turbo=1
 
@@ -180,38 +201,6 @@ cec_osd_name=Stratum1
 #########################################
 # standard resolution
 hdmi_drive=2
-
-#########################################
-# custom resolution
-# 4k@24Hz or 25Hz custom DMT - mode
-#gpu_mem=128
-#hdmi_group=2
-#hdmi_mode=87
-#hdmi_pixel_freq_limit=400000000
-#max_framebuffer_width=3840
-#max_framebuffer_height=2160
-#
-#    #### implicit timing ####
-#    hdmi_cvt 3840 2160 24
-#    #hdmi_cvt 3840 2160 25
-#
-#    #### explicit timing ####
-#    #hdmi_ignore_edid=0xa5000080
-#    #hdmi_timings=3840 1 48 32 80 2160 1 3 5 54 0 0 0 24 0 211190000 3
-#    ##hdmi_timings=3840 1 48 32 80 2160 1 3 5 54 0 0 0 25 0 220430000 3
-#    #framebuffer_width=3840
-#    #framebuffer_height=2160
-
-# gps + pps + ntp settings
-# https://github.com/raspberrypi/firmware/tree/master/boot/overlays
-#Name:   pps-gpio
-#Info:   Configures the pps-gpio (pulse-per-second time signal via GPIO).
-#Load:   dtoverlay=pps-gpio,<param>=<val>
-#Params: gpiopin                 Input GPIO (default "18")
-#        assert_falling_edge     When present, assert is indicated by a falling
-#                                edge, rather than by a rising edge
-# dtoverlay=pps-gpio,gpiopin=4,assert_falling_edge
-dtoverlay=pps-gpio,gpiopin=4
 EOF";
     }
 
