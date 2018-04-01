@@ -39,6 +39,7 @@ assuming,
 - and your SD card is expanded,
 - and you connected the GPS module direct to the RPi's RX/TX pins of the GPIO and the GPS PPS pin to the RPi' GPIO #4
 
+**0. in case you use an RPi3, you have to disable the bluetooth interface via `sudo raspi-config` first!**
 1. run `bash install-gps-pps.sh` to install necessary packages and setup Kernel PPS, GPSD, and NTP with PPS support.
 2. reboot your RPi with `sudo reboot`
 
