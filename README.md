@@ -41,5 +41,6 @@ assuming,
 
 1. run `bash install-gps-pps.sh` to install necessary packages and setup Kernel PPS, GPSD, and NTP with PPS support.
 2. reboot your RPi with `sudo reboot`
+3. **_in case you have a RPi3, RPi3+ or RPi0w with a built-in bluetooth adapter, please run `sudo raspi-conf` and disable the bluetooth adapter there. the built-in bluetooth adapter will block the serial port of the GPIO pins._**
 
 done.
