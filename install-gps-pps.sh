@@ -163,30 +163,6 @@ handle_pps() {
         echo -e "\e[36m    setup config.txt for PPS\e[0m";
         sudo sh -c "cat << EOF  > /boot/config.txt
 # /boot/config.txt
-# https://www.raspberrypi.org/documentation/configuration/config-txt.md
-# https://github.com/raspberrypi/firmware/tree/master/boot/overlays
-## Stratum1
-
-# gps + pps + ntp settings
-
-[pi3]
-#Name:   pi3-disable-bt
-#Info:   Disable Pi3 Bluetooth and restore UART0/ttyAMA0 over GPIOs 14 & 15
-#        N.B. To disable the systemd service that initialises the modem so it
-#        doesn't use the UART, use 'sudo systemctl disable hciuart'.
-#Load:   dtoverlay=pi3-disable-bt
-#Params: <None>
-dtoverlay=pi3-disable-bt
-
-[all]
-#Name:   pps-gpio
-#Info:   Configures the pps-gpio (pulse-per-second time signal via GPIO).
-#Load:   dtoverlay=pps-gpio,<param>=<val>
-#Params: gpiopin                 Input GPIO (default "18")
-#        assert_falling_edge     When present, assert is indicated by a falling
-#                                edge, rather than by a rising edge
-# dtoverlay=pps-gpio,gpiopin=4,assert_falling_edge
-dtoverlay=pps-gpio,gpiopin=4
 
 max_usb_current=1
 force_turbo=1
@@ -201,6 +177,31 @@ cec_osd_name=Stratum1
 #########################################
 # standard resolution
 hdmi_drive=2
+
+
+#########################################
+# https://www.raspberrypi.org/documentation/configuration/config-txt.md
+# https://github.com/raspberrypi/firmware/tree/master/boot/overlays
+## Stratum1
+
+# gps + pps + ntp settings
+
+#Name:   pps-gpio
+#Info:   Configures the pps-gpio (pulse-per-second time signal via GPIO).
+#Load:   dtoverlay=pps-gpio,<param>=<val>
+#Params: gpiopin                 Input GPIO (default "18")
+#        assert_falling_edge     When present, assert is indicated by a falling
+#                                edge, rather than by a rising edge
+# dtoverlay=pps-gpio,gpiopin=4,assert_falling_edge
+dtoverlay=pps-gpio,gpiopin=4
+
+#Name:   pi3-disable-bt
+#Info:   Disable Pi3 Bluetooth and restore UART0/ttyAMA0 over GPIOs 14 & 15
+#        N.B. To disable the systemd service that initialises the modem so it
+#        doesn't use the UART, use 'sudo systemctl disable hciuart'.
+#Load:   dtoverlay=pi3-disable-bt
+#Params: <None>
+dtoverlay=pi3-disable-bt
 EOF";
     }
 
