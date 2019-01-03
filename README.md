@@ -6,6 +6,8 @@ i did not keeped an eye on network security.
 
 USE IT AT YOUR OWN RISK
 
+**Please give me a '_Star_', if you find that project useful.**
+
 ### overview schematic:
 ```
                      ╔═══╗       ╔══════╗         ╔══════╗  GPS-Antenna
@@ -30,11 +32,11 @@ USE IT AT YOUR OWN RISK
 - GPS module with PPS output (Adafruit Ultimate GPS Breakout - 66 channel w/10 Hz updates - Version 3; https://www.adafruit.com/products/746)
 
 ### software:
-- Raspbian Stretch Lite (2018-03-13, https://www.raspberrypi.org/downloads/raspbian/)
+- Raspbian Stretch Lite (2018-11-13, https://www.raspberrypi.org/downloads/raspbian/)
 
 ## installation:
 assuming,
-- your Raspberry Pi is running Raspbian Stretch Lite (2018-03-13),
+- your Raspberry Pi is running Raspbian Stretch Lite (2018-11-13),
 - and has a proper connection to the internet via LAN.
 - and your SD card is expanded,
 - and you connected the GPS module direct to the RPi's RX/TX pins of the GPIO and the GPS PPS pin to the RPi' GPIO #4
