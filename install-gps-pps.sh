@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ######################################################################
-# 2018-03-13-raspbian-stretch-lite
+# 2018-11-13-raspbian-stretch-lite
 
 
 ##################################################################
@@ -56,11 +56,10 @@ handle_update() {
     echo -e "\e[32mhandle_update()\e[0m";
 
     sudo sync \
-    && echo -e "\e[32mupdate...\e[0m" && sudo apt-get update \
-    && echo -e "\e[32mupgrade...\e[0m" && sudo apt-get -y upgrade \
-    && echo -e "\e[32mdist-upgrade...\e[0m" && sudo apt-get -y dist-upgrade \
-    && echo -e "\e[32mautoremove...\e[0m" && sudo apt-get -y --purge autoremove \
-    && echo -e "\e[32mautoclean...\e[0m" && sudo apt-get autoclean \
+    && echo -e "\e[32mupdate...\e[0m" && sudo apt update \
+    && echo -e "\e[32mupgrade...\e[0m" && sudo apt full-upgrade -y \
+    && echo -e "\e[32mautoremove...\e[0m" && sudo autoremove apt -y --purge \
+    && echo -e "\e[32mautoclean...\e[0m" && sudo apt autoclean \
     && echo -e "\e[32mDone.\e[0m" \
     && sudo sync;
 }
@@ -161,7 +160,7 @@ handle_pps() {
     ##################################################################
     grep -q pps-gpio /boot/config.txt 2> /dev/null || {
         echo -e "\e[36m    setup config.txt for PPS\e[0m";
-        sudo sh -c "cat << EOF  > /boot/config.txt
+        sudo sh -c "cat << EOF  >> /boot/config.txt
 # /boot/config.txt
 
 max_usb_current=1
@@ -353,12 +352,8 @@ handle_samba() {
     grep -q Stratum1 /etc/samba/smb.conf 2> /dev/null || {
         echo -e "\e[36m  setup samba\e[0m";
         sudo systemctl stop smb.service;
-        sudo sed -i /etc/samba/smb.conf -n -e "1,/#======================= Share Definitions =======================/p";
+        #sudo sed -i /etc/samba/smb.conf -n -e "1,/#======================= Share Definitions =======================/p";
         sudo sh -c "cat << EOF  >> /etc/samba/smb.conf
-[global]
-# https://www.samba.org/samba/security/CVE-2017-14746.html
-server min protocol = SMB2
-
 ## Stratum1
 
 [share]
