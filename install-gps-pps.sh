@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ######################################################################
-# 2018-11-13-raspbian-stretch-lite
+# 2019-09-26-raspbian-buster-lite
 
 
 ##################################################################
@@ -164,7 +164,7 @@ handle_pps() {
 # /boot/config.txt
 
 max_usb_current=1
-force_turbo=1
+#force_turbo=1
 
 disable_overscan=1
 hdmi_force_hotplug=1
@@ -201,6 +201,9 @@ dtoverlay=pps-gpio,gpiopin=4
 #Load:   dtoverlay=pi3-disable-bt
 #Params: <None>
 dtoverlay=pi3-disable-bt
+
+# Enable UART
+enable_uart=1
 EOF";
     }
 
