@@ -58,7 +58,7 @@ handle_update() {
     sudo sync \
     && echo -e "\e[32mupdate...\e[0m" && sudo apt update \
     && echo -e "\e[32mupgrade...\e[0m" && sudo apt full-upgrade -y \
-    && echo -e "\e[32mautoremove...\e[0m" && sudo autoremove apt -y --purge \
+    && echo -e "\e[32mautoremove...\e[0m" && sudo apt autoremove -y --purge \
     && echo -e "\e[32mautoclean...\e[0m" && sudo apt autoclean \
     && echo -e "\e[32mDone.\e[0m" \
     && sudo sync;
