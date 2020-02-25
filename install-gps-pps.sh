@@ -1,52 +1,24 @@
 #!/bin/bash
 
 ######################################################################
-# 2019-09-26-raspbian-buster-lite
+# 2020-02-13-raspbian-buster-lite
 
+BACKUP_FILE=backup.tar.xz
 
 ##################################################################
 # if a GPS module is already installed and is giving GPS feed on the GPIO-serial port,
 # it can generate error messages to the console, because the kernel try to interprete this as commands from the boot console
 sudo systemctl stop serial-getty@ttyAMA0.service;
 sudo systemctl disable serial-getty@ttyAMA0.service;
-sudo sed -i -e "s/console=serial0,115200//" /boot/cmdline.txt;
 
-
-######################################################################
-handle_locale() {
-    echo -e "\e[32mhandle_locale()\e[0m";
-
-    echo -e "\e[36m    prepare locale to nothing (default:C.UTF-8)\e[0m";
-    export LC_TIME=C.UTF-8;
-    export LC_MONETARY=C.UTF-8;
-    export LC_ADDRESS=C.UTF-8;
-    export LC_TELEPHONE=C.UTF-8;
-    export LC_NAME=C.UTF-8;
-    export LC_MEASUREMENT=C.UTF-8;
-    export LC_IDENTIFICATION=C.UTF-8;
-    export LC_NUMERIC=C.UTF-8;
-    export LC_PAPER=C.UTF-8;
-    export LC_CTYPE=C.UTF-8;
-    export LC_MESSAGES=C.UTF-8;
-    export LC_ALL=C.UTF-8;
-    export LANG=C.UTF-8;
-    export LANGUAGE=C.UTF-8;
-    sudo sed -i -e "s/^en_GB.UTF-8 UTF-8/\# en_GB.UTF-8 UTF-8/" /etc/locale.gen;
-    sudo LC_ALL=C.UTF-8 locale-gen --purge;
-    sudo sh -c "cat << EOF  > /etc/default/locale
-# /etc/default/locale
-LANG=C.UTF-8
-LANGUAGE=C.UTF-8
-LC_ALL=C.UTF-8
-EOF";
-}
 
 ######################################################################
 handle_timezone() {
     echo -e "\e[32mhandle_timezone()\e[0m";
 
     echo -e "\e[36m    prepare timezone to Etc/UTC\e[0m";
-    sudo sh -c "echo 'Etc/UTC' > /etc/timezone";
+    tar -ravf $BACKUP_FILE -C / etc/timezone
+    echo 'Etc/UTC' | sudo tee /etc/timezone &>/dev/null
     sudo dpkg-reconfigure -f noninteractive tzdata;
 }
 
@@ -72,11 +44,12 @@ handle_gps() {
     ##################################################################
     echo -e "\e[36m    prepare GPS\e[0m";
     ##################################################################
-    # specific to 2017-08-16-raspbian-stretch-lite
     echo -e "\e[36m    make boot quiet to serial port: serial0\e[0m";
-    sudo sed -i -e "s/console=serial0,115200//" /boot/cmdline.txt;
     sudo systemctl stop serial-getty@ttyAMA0.service;
     sudo systemctl disable serial-getty@ttyAMA0.service;
+    tar -ravf $BACKUP_FILE -C / boot/cmdline.txt
+    sudo sed -i -e "s/console=serial0,115200//" /boot/cmdline.txt;
+    sudo sed -i -e "s/console=ttyAMA0,115200//" /boot/cmdline.txt;
 
     ##################################################################
     echo -e "\e[36m    install gpsd\e[0m";
@@ -86,7 +59,9 @@ handle_gps() {
     echo -e "\e[36m    setup gpsd\e[0m";
     sudo systemctl stop gpsd.socket;
     sudo systemctl stop gpsd.service;
-    sudo sh -c "cat << EOF  > /etc/default/gpsd
+
+    tar -ravf $BACKUP_FILE -C / etc/default/gpsd
+    cat << EOF | sudo tee /etc/default/gpsd &>/dev/null
 # /etc/default/gpsd
 ## Stratum1
 START_DAEMON=\"true\"
@@ -94,21 +69,23 @@ GPSD_OPTIONS=\"-n\"
 DEVICES=\"/dev/ttyAMA0 /dev/pps0\"
 USBAUTO=\"false\"
 GPSD_SOCKET=\"/var/run/gpsd.sock\"
-EOF";
+EOF
     sudo systemctl restart gpsd.service;
     sudo systemctl restart gpsd.socket;
 
     ##################################################################
-    grep -q Stratum1 /lib/systemd/system/gpsd.socket 2> /dev/null || {
+    grep -q Stratum1 /lib/systemd/system/gpsd.socket &>/dev/null || {
         echo -e "\e[36m    fix gpsd to listen to all connection requests\e[0m";
+        tar -ravf $BACKUP_FILE -C / lib/systemd/system/gpsd.socket
         sudo sed /lib/systemd/system/gpsd.socket -i -e "s/ListenStream=127.0.0.1:2947/ListenStream=0.0.0.0:2947/";
-        sudo sh -c "cat << EOF  >> /lib/systemd/system/gpsd.socket
+        cat << EOF | sudo tee -a /lib/systemd/system/gpsd.socket &>/dev/null
 ;; Stratum1
-EOF";
+EOF
     }
 
-    grep -q Stratum1 /etc/rc.local 2> /dev/null || {
+    grep -q Stratum1 /etc/rc.local &>/dev/null || {
         echo -e "\e[36m    tweak GPS device at start up\e[0m";
+        tar -ravf $BACKUP_FILE -C / etc/rc.local
         sudo sed /etc/rc.local -i -e "s/^exit 0$//";
         printf "## Stratum1
 sudo systemctl stop gpsd.socket;
@@ -135,16 +112,18 @@ exit 0
     }
 
     [ -f "/etc/dhcp/dhclient-exit-hooks.d/ntp" ] && {
+        tar -ravf $BACKUP_FILE -C / etc/dhcp/dhclient-exit-hooks.d/ntp
         sudo rm -f /etc/dhcp/dhclient-exit-hooks.d/ntp;
     }
 
     [ -f "/etc/udev/rules.d/99-gps.rules" ] || {
         echo -e "\e[36m    create rule to create symbolic link\e[0m";
-        sudo sh -c "cat << EOF  > /etc/udev/rules.d/99-gps.rules
+        tar -ravf $BACKUP_FILE -C / etc/udev/rules.d/99-gps.rules
+        cat << EOF | sudo tee /etc/udev/rules.d/99-gps.rules &>/dev/null
 ## Stratum1
 KERNEL==\"pps0\",SYMLINK+=\"gpspps0\"
 KERNEL==\"ttyAMA0\", SYMLINK+=\"gps0\"
-EOF";
+EOF
     }
 }
 
@@ -158,25 +137,10 @@ handle_pps() {
     sudo apt-get -y install pps-tools;
 
     ##################################################################
-    grep -q pps-gpio /boot/config.txt 2> /dev/null || {
+    grep -q pps-gpio /boot/config.txt &>/dev/null || {
         echo -e "\e[36m    setup config.txt for PPS\e[0m";
-        sudo sh -c "cat << EOF  >> /boot/config.txt
-# /boot/config.txt
-
-max_usb_current=1
-#force_turbo=1
-
-disable_overscan=1
-hdmi_force_hotplug=1
-config_hdmi_boost=4
-
-#hdmi_ignore_cec_init=1
-cec_osd_name=Stratum1
-
-#########################################
-# standard resolution
-hdmi_drive=2
-
+        tar -ravf $BACKUP_FILE -C / boot/config.txt
+        cat << EOF | sudo tee -a /boot/config.txt &>/dev/null
 
 #########################################
 # https://www.raspberrypi.org/documentation/configuration/config-txt.md
@@ -204,13 +168,14 @@ dtoverlay=pi3-disable-bt
 
 # Enable UART
 enable_uart=1
-EOF";
+EOF
     }
 
     ##################################################################
-    grep -q pps-gpio /etc/modules 2> /dev/null || {
+    grep -q pps-gpio /etc/modules &>/dev/null || {
         echo -e "\e[36m    add pps-gpio to modules for PPS\e[0m";
-        sudo sh -c "echo 'pps-gpio' >> /etc/modules";
+        tar -ravf $BACKUP_FILE -C / etc/modules
+        echo 'pps-gpio' | sudo tee -a /etc/modules &>/dev/null
     }
 }
 
@@ -219,8 +184,8 @@ EOF";
 ######################################################################
 disable_ntp() {
     echo -e "\e[32mdisable_ntp()\e[0m";
-    sudo systemctl stop ntp.service 1>/dev/null 2>/dev/null;
-    sudo systemctl disable ntp.service 1>/dev/null 2>/dev/null;
+    sudo systemctl stop ntp.service &>/dev/null;
+    sudo systemctl disable ntp.service &>/dev/null;
 }
 
 
@@ -239,7 +204,9 @@ setup_chrony() {
     echo -e "\e[32msetup_chrony()\e[0m";
 
     sudo systemctl stop chronyd.service;
-    sudo sh -c "cat << EOF  > /etc/chrony/chrony.conf
+
+    tar -ravf $BACKUP_FILE -C / etc/chrony/chrony.conf
+    cat << EOF | sudo tee /etc/chrony/chrony.conf &>/dev/null
 # /etc/chrony/chrony.conf
 ## Stratum1
 
@@ -254,17 +221,47 @@ setup_chrony() {
 # information about usuable directives.
 
 
+######################################################################
+######################################################################
+#
+## SHM(0), gpsd: NMEA data from shared memory provided by gpsd
+#refclock  SHM 0  refid NMEA  precision 1e-3  offset 0.5  delay 0.2  poll 3  trust  require
+#
+## PPS: /dev/pps0: Kernel-mode PPS ref-clock for the precise seconds
+#refclock  PPS /dev/pps0  refid PPS  precision 1e-9  lock NMEA  poll 3  trust  prefer
+#
+## SHM(2), gpsd: PPS data from shared memory provided by gpsd
+#refclock  SHM 2  refid PPSx  precision 1e-9  poll 3  trust
+#
+## SOCK, gpsd: PPS data from socket provided by gpsd
+#refclock  SOCK /var/run/chrony.pps0.sock  refid PPSy  precision 1e-9  poll 3  trust
+#
+######################################################################
+######################################################################
+
+# https://chrony.tuxfamily.org/faq.html#_using_a_pps_reference_clock
+# SHM(0), gpsd: NMEA data from shared memory provided by gpsd
+refclock  SHM 0  refid NMEA  precision 1e-1  offset 0.6  delay 0.2  noselect
+#  require
+
 # PPS: /dev/pps0: Kernel-mode PPS ref-clock for the precise seconds
-refclock  PPS /dev/pps0  refid PPS  precision 1e-9  lock NMEA  poll 3  trust  prefer
+refclock  PPS /dev/pps0  refid PPS  precision 1e-9  lock NMEA  noselect
+#  prefer
+#  trust
 
 # SHM(2), gpsd: PPS data from shared memory provided by gpsd
-refclock  SHM 2  refid PPSx  precision 1e-9  poll 3  trust
+refclock  SHM 2  refid PPSx  precision 1e-8  prefer
+#  trust
+#  noselect
 
 # SOCK, gpsd: PPS data from socket provided by gpsd
-refclock  SOCK /var/run/chrony.pps0.sock  refid PPSy  precision 1e-9  poll 3  trust
+refclock  SOCK /var/run/chrony.pps0.sock  refid PPSy  precision 1e-7
+#  prefer
+#  trust
+#  noselect
 
-# SHM(0), gpsd: NMEA data from shared memory provided by gpsd
-refclock  SHM 0  refid NMEA  precision 1e-3  offset 0.5  delay 0.2  poll 3  trust  require
+######################################################################
+######################################################################
 
 # any NTP clients are allowed to access the NTP server.
 allow
@@ -284,12 +281,6 @@ local
 ## Royal Observatory of Belgium
 #server  ntp1.oma.be  iburst  noselect
 #server  ntp2.oma.be  iburst  noselect
-#
-## Unizeto Technologies S.A., Szczecin, Polska
-#server  ntp.certum.pl  iburst  noselect
-#
-## SP Swedish National Testing and Research Institute, Boras, Sweden
-#server  ntp2.sp.se  iburst  noselect
 
 # Other NTP Servers
 #pool  de.pool.ntp.org  iburst  noselect
@@ -322,8 +313,10 @@ rtcsync
 
 # Step the system clock instead of slewing it if the adjustment is larger than
 # one second, but only in the first three clock updates.
-makestep 1 3
-EOF";
+#makestep 1 3
+
+makestep 0.2 -1
+EOF
     sudo systemctl restart chronyd.service;
 }
 
@@ -331,8 +324,8 @@ EOF";
 ######################################################################
 disable_chrony() {
     echo -e "\e[32mdisable_chrony()\e[0m";
-    sudo systemctl stop chronyd.service 1>/dev/null 2>/dev/null;
-    sudo systemctl disable chronyd.service 1>/dev/null 2>/dev/null;
+    sudo systemctl stop chronyd.service &>/dev/null;
+    sudo systemctl disable chronyd.service &>/dev/null;
 }
 
 
@@ -352,11 +345,13 @@ handle_samba() {
     }
 
     ##################################################################
-    grep -q Stratum1 /etc/samba/smb.conf 2> /dev/null || {
+    grep -q Stratum1 /etc/samba/smb.conf &>/dev/null || {
         echo -e "\e[36m  setup samba\e[0m";
         sudo systemctl stop smb.service;
+
+        tar -ravf $BACKUP_FILE -C / etc/samba/smb.conf
         #sudo sed -i /etc/samba/smb.conf -n -e "1,/#======================= Share Definitions =======================/p";
-        sudo sh -c "cat << EOF  >> /etc/samba/smb.conf
+        cat << EOF | sudo tee -a /etc/samba/smb.conf &>/dev/null
 ## Stratum1
 
 [share]
@@ -388,7 +383,7 @@ handle_samba() {
   force directory mode = 0755
   force user = root
   force group = root
-EOF";
+EOF
         sudo systemctl restart smbd.service;
     }
 }
@@ -400,13 +395,14 @@ handle_dhcpcd() {
 
     grep -q Stratum1 /etc/dhcpcd.conf || {
         echo -e "\e[36m    setup dhcpcd.conf\e[0m";
-        sudo sh -c "cat << EOF  >> /etc/dhcpcd.conf
+        tar -ravf $BACKUP_FILE -C / etc/dhcpcd.conf
+        cat << EOF | sudo tee -a /etc/dhcpcd.conf &>/dev/null
 ## Stratum1
 #interface eth0
-#static ip_address=192.168.1.161/24
+#static ip_address=192.168.1.101/24
 #static routers=192.168.1.1
 #static domain_name_servers=192.168.1.1
-EOF";
+EOF
     }
 }
 
@@ -445,7 +441,6 @@ disable_timesyncd() {
 ######################################################################
 
 
-handle_locale
 handle_timezone
 
 handle_update
