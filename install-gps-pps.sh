@@ -8,7 +8,9 @@ BACKUP_FILE=backup.tar.xz
 ##################################################################
 # if a GPS module is already installed and is giving GPS feed on the GPIO-serial port,
 # it can generate error messages to the console, because the kernel try to interprete this as commands from the boot console
+sudo systemctl stop serial-getty@serial0.service;
 sudo systemctl stop serial-getty@ttyAMA0.service;
+sudo systemctl disable serial-getty@serial0.service;
 sudo systemctl disable serial-getty@ttyAMA0.service;
 
 
@@ -45,7 +47,9 @@ handle_gps() {
     echo -e "\e[36m    prepare GPS\e[0m";
     ##################################################################
     echo -e "\e[36m    make boot quiet to serial port: serial0\e[0m";
+    sudo systemctl stop serial-getty@serial0.service;
     sudo systemctl stop serial-getty@ttyAMA0.service;
+    sudo systemctl disable serial-getty@serial0.service;
     sudo systemctl disable serial-getty@ttyAMA0.service;
     tar -ravf $BACKUP_FILE -C / boot/cmdline.txt
     sudo sed -i -e "s/console=serial0,115200//" /boot/cmdline.txt;
@@ -54,6 +58,7 @@ handle_gps() {
     ##################################################################
     echo -e "\e[36m    install gpsd\e[0m";
     sudo apt-get -y install gpsd gpsd-clients;
+    sudo apt-get -y install --no-install-recommends python-gi-cairo;
 
     ##################################################################
     echo -e "\e[36m    setup gpsd\e[0m";
@@ -64,11 +69,11 @@ handle_gps() {
     cat << EOF | sudo tee /etc/default/gpsd &>/dev/null
 # /etc/default/gpsd
 ## Stratum1
-START_DAEMON=\"true\"
-GPSD_OPTIONS=\"-n\"
-DEVICES=\"/dev/ttyAMA0 /dev/pps0\"
-USBAUTO=\"false\"
-GPSD_SOCKET=\"/var/run/gpsd.sock\"
+START_DAEMON="true"
+GPSD_OPTIONS="-n"
+DEVICES="/dev/ttyAMA0 /dev/pps0"
+USBAUTO="false"
+GPSD_SOCKET="/var/run/gpsd.sock"
 EOF
     sudo systemctl restart gpsd.service;
     sudo systemctl restart gpsd.socket;
@@ -121,8 +126,8 @@ exit 0
         tar -ravf $BACKUP_FILE -C / etc/udev/rules.d/99-gps.rules
         cat << EOF | sudo tee /etc/udev/rules.d/99-gps.rules &>/dev/null
 ## Stratum1
-KERNEL==\"pps0\",SYMLINK+=\"gpspps0\"
-KERNEL==\"ttyAMA0\", SYMLINK+=\"gps0\"
+KERNEL=="pps0",SYMLINK+="gpspps0"
+KERNEL=="ttyAMA0", SYMLINK+="gps0"
 EOF
     }
 }
