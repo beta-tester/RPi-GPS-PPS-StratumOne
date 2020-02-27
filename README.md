@@ -6,7 +6,7 @@ i did not keeped an eye on network security.
 
 **It will override some configurations**
 
-(a backup of the changed configuration files will be stored to **backup.tar.gz**)
+(a backup of the changed configuration files will be stored to **backup.tar.xz**)
 
 **USE IT AT YOUR OWN RISK**
 
