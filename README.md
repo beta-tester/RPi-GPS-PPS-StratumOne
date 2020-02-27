@@ -1,11 +1,10 @@
 # RPi-GPS-PPS-StratumOne
 
-setup a Raspberry Pi as an Stratum One NTP server.
-it is a private project i have made for myself.
+setup a Raspberry Pi as an Stratum One NTP server.<br />
+it is a private project i have made for myself.<br />
 i did not keeped an eye on network security.
 
-**It will override some configurations**
-
+**the script will override some existing configurations**<br />
 (a backup of the changed configuration files will be stored to **backup.tar.xz**)
 
 **USE IT AT YOUR OWN RISK**
