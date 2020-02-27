@@ -60,6 +60,8 @@ handle_gps() {
     sudo apt-get -y install gpsd gpsd-clients;
     sudo apt-get -y install --no-install-recommends python-gi-cairo;
 
+    sudo usermod -a -G dialout $USER
+
     ##################################################################
     echo -e "\e[36m    setup gpsd\e[0m";
     sudo systemctl stop gpsd.socket;
@@ -129,6 +131,7 @@ exit 0
 KERNEL=="pps0",SYMLINK+="gpspps0"
 KERNEL=="ttyAMA0", SYMLINK+="gps0"
 EOF
+        sudo udevadm control --reload-rules;
     }
 }
 
@@ -227,43 +230,39 @@ setup_chrony() {
 
 
 ######################################################################
+# full offline settings
 ######################################################################
 #
 ## SHM(0), gpsd: NMEA data from shared memory provided by gpsd
-#refclock  SHM 0  refid NMEA  precision 1e-3  offset 0.5  delay 0.2  poll 3  trust  require
+#refclock  SHM 0  refid NMEA  precision 1e-1  offset 0.6  delay 0.2  poll 3  trust  require
 #
 ## PPS: /dev/pps0: Kernel-mode PPS ref-clock for the precise seconds
 #refclock  PPS /dev/pps0  refid PPS  precision 1e-9  lock NMEA  poll 3  trust  prefer
 #
 ## SHM(2), gpsd: PPS data from shared memory provided by gpsd
-#refclock  SHM 2  refid PPSx  precision 1e-9  poll 3  trust
+#refclock  SHM 2  refid PPSx  precision 1e-8  poll 3  trust
 #
 ## SOCK, gpsd: PPS data from socket provided by gpsd
-#refclock  SOCK /var/run/chrony.pps0.sock  refid PPSy  precision 1e-9  poll 3  trust
+#refclock  SOCK /var/run/chrony.pps0.sock  refid PPSy  precision 1e-7  poll 3  trust
 #
 ######################################################################
 ######################################################################
 
+######################################################################
+# offline and online seiings
+######################################################################
 # https://chrony.tuxfamily.org/faq.html#_using_a_pps_reference_clock
 # SHM(0), gpsd: NMEA data from shared memory provided by gpsd
 refclock  SHM 0  refid NMEA  precision 1e-1  offset 0.6  delay 0.2  noselect
-#  require
 
 # PPS: /dev/pps0: Kernel-mode PPS ref-clock for the precise seconds
 refclock  PPS /dev/pps0  refid PPS  precision 1e-9  lock NMEA  noselect
-#  prefer
-#  trust
 
 # SHM(2), gpsd: PPS data from shared memory provided by gpsd
 refclock  SHM 2  refid PPSx  precision 1e-8  prefer
-#  trust
-#  noselect
 
 # SOCK, gpsd: PPS data from socket provided by gpsd
 refclock  SOCK /var/run/chrony.pps0.sock  refid PPSy  precision 1e-7
-#  prefer
-#  trust
-#  noselect
 
 ######################################################################
 ######################################################################
@@ -275,20 +274,20 @@ allow
 local
 
 
-# Stratum1 Servers
+# some Stratum1 Servers
 # https://www.meinbergglobal.com/english/glossary/public-time-server.htm
 #
 ## Physikalisch-Technische Bundesanstalt (PTB), Braunschweig, Germany
-#server  ptbtime1.ptb.de  iburst  noselect
-#server  ptbtime2.ptb.de  iburst  noselect
-#server  ptbtime3.ptb.de  iburst  noselect
+#server  ptbtime1.ptb.de  iburst
+#server  ptbtime2.ptb.de  iburst
+#server  ptbtime3.ptb.de  iburst
 #
 ## Royal Observatory of Belgium
-#server  ntp1.oma.be  iburst  noselect
-#server  ntp2.oma.be  iburst  noselect
+#server  ntp1.oma.be  iburst
+#server  ntp2.oma.be  iburst
 
 # Other NTP Servers
-#pool  de.pool.ntp.org  iburst  noselect
+#pool  de.pool.ntp.org  iburst
 
 
 # This directive specify the location of the file containing ID/key pairs for
