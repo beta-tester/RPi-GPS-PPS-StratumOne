@@ -70,7 +70,8 @@ handle_gps() {
     tar -ravf $BACKUP_FILE -C / etc/default/gpsd
     cat << EOF | sudo tee /etc/default/gpsd &>/dev/null
 # /etc/default/gpsd
-## Stratum1
+## mod_install_stratum_one
+
 START_DAEMON="true"
 GPSD_OPTIONS="-n"
 DEVICES="/dev/ttyAMA0 /dev/pps0"
@@ -81,20 +82,20 @@ EOF
     sudo systemctl restart gpsd.socket;
 
     ##################################################################
-    grep -q Stratum1 /lib/systemd/system/gpsd.socket &>/dev/null || {
+    grep -q mod_install_stratum_one /lib/systemd/system/gpsd.socket &>/dev/null || {
         echo -e "\e[36m    fix gpsd to listen to all connection requests\e[0m";
         tar -ravf $BACKUP_FILE -C / lib/systemd/system/gpsd.socket
         sudo sed /lib/systemd/system/gpsd.socket -i -e "s/ListenStream=127.0.0.1:2947/ListenStream=0.0.0.0:2947/";
         cat << EOF | sudo tee -a /lib/systemd/system/gpsd.socket &>/dev/null
-;; Stratum1
+;; mod_install_stratum_one
 EOF
     }
 
-    grep -q Stratum1 /etc/rc.local &>/dev/null || {
+    grep -q mod_install_stratum_one /etc/rc.local &>/dev/null || {
         echo -e "\e[36m    tweak GPS device at start up\e[0m";
         tar -ravf $BACKUP_FILE -C / etc/rc.local
         sudo sed /etc/rc.local -i -e "s/^exit 0$//";
-        printf "## Stratum1
+        printf "## mod_install_stratum_one
 sudo systemctl stop gpsd.socket;
 sudo systemctl stop gpsd.service;
 
@@ -127,7 +128,8 @@ exit 0
         echo -e "\e[36m    create rule to create symbolic link\e[0m";
         tar -ravf $BACKUP_FILE -C / etc/udev/rules.d/99-gps.rules
         cat << EOF | sudo tee /etc/udev/rules.d/99-gps.rules &>/dev/null
-## Stratum1
+## mod_install_stratum_one
+
 KERNEL=="pps0",SYMLINK+="gpspps0"
 KERNEL=="ttyAMA0", SYMLINK+="gps0"
 EOF
@@ -153,7 +155,7 @@ handle_pps() {
 #########################################
 # https://www.raspberrypi.org/documentation/configuration/config-txt.md
 # https://github.com/raspberrypi/firmware/tree/master/boot/overlays
-## Stratum1
+## mod_install_stratum_one
 
 # gps + pps + ntp settings
 
@@ -216,7 +218,8 @@ setup_chrony() {
     tar -ravf $BACKUP_FILE -C / etc/chrony/chrony.conf
     cat << EOF | sudo tee /etc/chrony/chrony.conf &>/dev/null
 # /etc/chrony/chrony.conf
-## Stratum1
+## mod_install_stratum_one
+## mod_install_server
 
 # https://chrony.tuxfamily.org/documentation.html
 # http://www.catb.org/gpsd/gpsd-time-service-howto.html#_feeding_chrony_from_gpsd
@@ -249,20 +252,20 @@ setup_chrony() {
 ######################################################################
 
 ######################################################################
-# offline and online seiings
+# combined offline and online settings
 ######################################################################
 # https://chrony.tuxfamily.org/faq.html#_using_a_pps_reference_clock
 # SHM(0), gpsd: NMEA data from shared memory provided by gpsd
-refclock  SHM 0  refid NMEA  precision 1e-1  offset 0.6  delay 0.2  noselect
+refclock  SHM 0  refid NMEA  precision 1e-1  offset 0.6  delay 0.2  poll 3  noselect
 
 # PPS: /dev/pps0: Kernel-mode PPS ref-clock for the precise seconds
-refclock  PPS /dev/pps0  refid PPS  precision 1e-9  lock NMEA  noselect
+refclock  PPS /dev/pps0  refid PPS  precision 1e-9  lock NMEA  poll 3  noselect
 
 # SHM(2), gpsd: PPS data from shared memory provided by gpsd
-refclock  SHM 2  refid PPSx  precision 1e-8  prefer
+refclock  SHM 2  refid PPSx  precision 1e-8 poll 3  prefer
 
 # SOCK, gpsd: PPS data from socket provided by gpsd
-refclock  SOCK /var/run/chrony.pps0.sock  refid PPSy  precision 1e-7
+refclock  SOCK /var/run/chrony.pps0.sock  refid PPSy  precision 1e-7  poll 3
 
 ######################################################################
 ######################################################################
@@ -278,16 +281,16 @@ local
 # https://www.meinbergglobal.com/english/glossary/public-time-server.htm
 #
 ## Physikalisch-Technische Bundesanstalt (PTB), Braunschweig, Germany
-#server  ptbtime1.ptb.de  iburst
-#server  ptbtime2.ptb.de  iburst
-#server  ptbtime3.ptb.de  iburst
+#server  ptbtime1.ptb.de  iburst  minpoll 4  maxpoll 4
+#server  ptbtime2.ptb.de  iburst  minpoll 4  maxpoll 4
+#server  ptbtime3.ptb.de  iburst  minpoll 4  maxpoll 4
 #
 ## Royal Observatory of Belgium
-#server  ntp1.oma.be  iburst
-#server  ntp2.oma.be  iburst
+#server  ntp1.oma.be  iburst  minpoll 4  maxpoll 4
+#server  ntp2.oma.be  iburst  minpoll 4  maxpoll 4
 
 # Other NTP Servers
-#pool  de.pool.ntp.org  iburst
+#pool  de.pool.ntp.org  iburst  minpoll 4  maxpoll 4
 
 
 # This directive specify the location of the file containing ID/key pairs for
@@ -349,14 +352,17 @@ handle_samba() {
     }
 
     ##################################################################
-    grep -q Stratum1 /etc/samba/smb.conf &>/dev/null || {
+    grep -q mod_install_stratum_one /etc/samba/smb.conf &>/dev/null || \
+    grep -q mod_install_server      /etc/samba/smb.conf &>/dev/null || \
+    {
         echo -e "\e[36m  setup samba\e[0m";
         sudo systemctl stop smb.service;
 
         tar -ravf $BACKUP_FILE -C / etc/samba/smb.conf
         #sudo sed -i /etc/samba/smb.conf -n -e "1,/#======================= Share Definitions =======================/p";
         cat << EOF | sudo tee -a /etc/samba/smb.conf &>/dev/null
-## Stratum1
+## mod_install_stratum_one
+## mod_install_server
 
 [share]
   comment = Share
@@ -397,11 +403,13 @@ EOF
 handle_dhcpcd() {
     echo -e "\e[32mhandle_dhcpcd()\e[0m";
 
-    grep -q Stratum1 /etc/dhcpcd.conf || {
+    grep -q mod_install_stratum_one /etc/dhcpcd.conf || \
+    grep -q mod_install_server      /etc/dhcpcd.conf || \
+    {
         echo -e "\e[36m    setup dhcpcd.conf\e[0m";
         tar -ravf $BACKUP_FILE -C / etc/dhcpcd.conf
         cat << EOF | sudo tee -a /etc/dhcpcd.conf &>/dev/null
-## Stratum1
+## mod_install_stratum_one
 #interface eth0
 #static ip_address=192.168.1.101/24
 #static routers=192.168.1.1
@@ -437,6 +445,13 @@ disable_timesyncd() {
 #gpsmon
 #ipcs -m
 #ntpshmmon
+#
+#sudo systemctl stop chronyd.service;
+#sudo systemctl stop gpsd.socket;
+#sudo systemctl stop gpsd.service;
+#sudo systemctl start gpsd.service;
+#sudo systemctl start gpsd.socket;
+#sudo systemctl start chronyd.service;
 #
 #chronyc sources
 #chronyc sourcestats
