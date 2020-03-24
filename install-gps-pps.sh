@@ -64,8 +64,8 @@ handle_gps() {
 
     ##################################################################
     echo -e "\e[36m    setup gpsd\e[0m";
-    sudo systemctl stop gpsd.service;
     sudo systemctl stop gpsd.socket;
+    sudo systemctl stop gpsd.service;
 
     tar -ravf $BACKUP_FILE -C / etc/default/gpsd
     cat << EOF | sudo tee /etc/default/gpsd &>/dev/null
@@ -97,8 +97,8 @@ EOF
         tar -ravf $BACKUP_FILE -C / etc/rc.local
         sudo sed /etc/rc.local -i -e "s/^exit 0$//";
         printf "## mod_install_stratum_one
-#sudo systemctl stop gpsd.service;
 #sudo systemctl stop gpsd.socket;
+#sudo systemctl stop gpsd.service;
 
 # default GPS device settings at power on
 #stty -F /dev/ttyAMA0 9600
