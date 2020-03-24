@@ -64,8 +64,8 @@ handle_gps() {
 
     ##################################################################
     echo -e "\e[36m    setup gpsd\e[0m";
-    sudo systemctl stop gpsd.socket;
     sudo systemctl stop gpsd.service;
+    sudo systemctl stop gpsd.socket;
 
     tar -ravf $BACKUP_FILE -C / etc/default/gpsd
     cat << EOF | sudo tee /etc/default/gpsd &>/dev/null
@@ -73,13 +73,14 @@ handle_gps() {
 ## mod_install_stratum_one
 
 START_DAEMON="true"
-GPSD_OPTIONS="-n"
+GPSD_OPTIONS="-n -r -d"
 DEVICES="/dev/ttyAMA0 /dev/pps0"
-USBAUTO="false"
+USBAUTO="true"
 GPSD_SOCKET="/var/run/gpsd.sock"
 EOF
-    sudo systemctl restart gpsd.service;
     sudo systemctl restart gpsd.socket;
+    sudo systemctl enable gpsd.service;
+    sudo systemctl restart gpsd.service;
 
     ##################################################################
     grep -q mod_install_stratum_one /lib/systemd/system/gpsd.socket &>/dev/null || {
@@ -96,11 +97,11 @@ EOF
         tar -ravf $BACKUP_FILE -C / etc/rc.local
         sudo sed /etc/rc.local -i -e "s/^exit 0$//";
         printf "## mod_install_stratum_one
-sudo systemctl stop gpsd.socket;
-sudo systemctl stop gpsd.service;
+#sudo systemctl stop gpsd.service;
+#sudo systemctl stop gpsd.socket;
 
 # default GPS device settings at power on
-stty -F /dev/ttyAMA0 9600
+#stty -F /dev/ttyAMA0 9600
 
 ## custom GPS device settings
 ## 115200baud io rate,
@@ -109,11 +110,11 @@ stty -F /dev/ttyAMA0 9600
 ## 10 Hz update interval
 #printf \x27\x24PMTK220,100*2F\x5Cr\x5Cn\x27 \x3E /dev/ttyAMA0
 
-sudo systemctl restart gpsd.service;
-sudo systemctl restart gpsd.socket;
+#sudo systemctl restart gpsd.socket;
+#sudo systemctl restart gpsd.service;
 
 # workaround: lets start any gps client to forct gps service to wakeup and work
-gpspipe -r -n 1 &
+#gpspipe -r -n 1 &>/dev/null &
 
 exit 0
 " | sudo tee -a /etc/rc.local > /dev/null;
@@ -324,6 +325,7 @@ rtcsync
 
 makestep 0.2 -1
 EOF
+    sudo systemctl enable chronyd.service;
     sudo systemctl restart chronyd.service;
 }
 
