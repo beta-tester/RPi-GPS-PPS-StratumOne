@@ -72,11 +72,20 @@ handle_gps() {
 # /etc/default/gpsd
 ## mod_install_stratum_one
 
+# Default settings for the gpsd init script and the hotplug wrapper.
+
+# Start the gpsd daemon automatically at boot time
 START_DAEMON="true"
-GPSD_OPTIONS="-n -r -d"
-DEVICES="/dev/ttyAMA0 /dev/pps0"
+
+# Use USB hotplugging to add new USB devices automatically to the daemon
 USBAUTO="true"
-GPSD_SOCKET="/var/run/gpsd.sock"
+
+# Devices gpsd should collect to at boot time.
+# They need to be read/writeable, either by user gpsd or the group dialout.
+DEVICES="/dev/ttyAMA0 /dev/pps0"
+
+# Other options you want to pass to gpsd
+GPSD_OPTIONS="-n -r -b"
 EOF
     sudo systemctl restart gpsd.socket;
     sudo systemctl enable gpsd.service;
