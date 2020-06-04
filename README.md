@@ -66,9 +66,13 @@ assuming,
 
 done.
 
-## NOTE:
-to combine NMEA and PPS in chrony, there is a specific requirement,<br />
-that NMEA data and PPS signal must have a time offset less than +/-200ms.<br />
+## NOTES:
+### note1:
+**PPS** is a high precise pulse, without a time information.<br />
+**NMEA** has date/time information, but with very low precision.
+
+to combine **NMEA** and **PPS** in chrony, there is a specific requirement,<br />
+that NMEA data and PPS signal must have a time offset less than **+/-200ms**.<br />
 otherwise the PPS signal is seen as falsetick and will be rejected by chrony.
 
 depending on your GPS device the offset used in my script can be way too off.
@@ -87,7 +91,7 @@ for example:
 MS Name/IP address         Stratum Poll Reach LastRx Last sample               
 ===============================================================================
 #? NMEA                          0   2   377     5   +480ms[ +480ms] +/-  200ms
-#? PPS                           0   2     0     0     +0ns[+2000ms] +/- 2000ms
+#? PPS                           0   2     0     0  +2000ms[+2000ms] +/- 2000ms
 ...
 ^- ptbtime1.ptb.de               1   4   377    79  -4924us[-4924us] +/-   13ms
 ...
@@ -97,6 +101,9 @@ be sure you see on NMEA and your selected ntp server the value of 377 in the col
 `NMEA 0 2 377 5 +480ms ...`<br />
 in this example the current offset of NMEA is +480ms.<br />
 this would be too high to get a proper lock of PPS to NMEA in chrony.
+
+try to adjust the offset and restart the chrony service eych time you made adjustments:<br />
+`sudo systemctl restart chrony.service`
 
 as soon the offset is pernamently less than +/-200ms,<br />
 you should see that PPS is starting to be marked as reached by chrony.<br />
@@ -109,3 +116,18 @@ MS Name/IP address         Stratum Poll Reach LastRx Last sample
 ```
 
 once you got a good offset, you can use your RPi + GPS offline.
+
+### note2:
+- **NMEA**, has an accuracy of about +/-200ms.<br />
+it is available mostely as soon the GPS finished its cold- or warm- start<br />or immediately, when the device has an internal RTC with backup battery.
+- **PPS**, has the highest accuracy.<br />
+it is passed by the kernel to /dev/pps0.<br />
+in chrony there is a specifiy timing offset requirement to NMEA, that may cause the PPS to be seen as falsetick and may be rejected by chrony.
+- **PPSx**, is coming from the gpsd service via SHM 2 (shared memory) and is also a combination of NMEA and PPS, but handled by gpsd service.<br />
+it has a bit less accuracy than the PPS direckly.<br />
+gpsd is "_simulating_" PPS internaly, in the case there is no real PPS received on time.
+even there is no real PPS signal coming from the gps device on time, chrony will see the PPSx as trusted time reference.<br />
+for this reason use PPSx, in case you have a weak intermitten PPS signal coming from the gps device.
+- **PPSy**, is coming also from gpsd service like as PPSx but via a socket.<br />
+it has the same accuracy as PPSx because they have the same time source.<br />
+_the PPSy may break until the next system reboot, when the chrony.service is restarted._
