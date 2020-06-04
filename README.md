@@ -28,19 +28,19 @@ i did not keeped an eye on network security.
 ### overview: path of time source
 (without external NTP servers)
 ```
-╔══════╗    ╔═══════════════╗                      ╔═══════
-║ GPS  ╫─RX─╫─┐ KERNEL      ║                      ║CHRONY
-║ ╔════╣    ║ │             ║                      ║
-║ ║NMEA╫─TX─╫─┴─/dev/serial0╫───┬──────────────────╫─NMEA──
-║ ╠════╣    ║               ║   │                  ║ (+)
-║ ║ PPS╫GPIO╫───/dev/pps0───╫─┬─)──────────────────╫─PPS───
-╚═╩════╝    ╚═══════════════╝ │ │ ╔══════════╗     ║
-                              │ │ ║ GPSD     ║     ║
-                              │ │ ╠══════╗   ║     ║
-                              │ └─╫NMEA┐ ║ ┌─╫SHM2─╫─PPSx──
-                              │   ║(+) ├─╫─┤ ║     ║
-                              └───╫PPS─┘ ║ └─╫SOCK─╫─PPSy──
-                                  ╚══════╩═══╝     ╚═══════
+╔══════╗    ╔═══════════════╗
+║ GPS  ╫─RX─╫─┐ KERNEL      ║
+║ ╔════╣    ║ │             ║                       ╔═══════
+║ ║NMEA╫─TX─╫─┴─/dev/serial0╫───┐                   ║CHRONY
+║ ╠════╣    ║               ║   │                   ║
+║ ║ PPS╫GPIO╫───/dev/pps0───╫─┬─)───────────────────╫─PPS──o
+╚═╩════╝    ╚═══════════════╝ │ │ ╔═══════════╗     ║ (+)
+                              │ │ ║ GPSD   ┌──╫SHM0─╫─NMEA─o
+                              │ │ ╠══════╗ │  ║     ║
+                              │ └─╫NMEA┬─╫─┘┌─╫SHM2─╫─PPSx─o
+                              │   ║(+) ├─╫──┤ ║     ║
+                              └───╫PPS─┘ ║  └─╫SOCK─╫─PPSy─o
+                                  ╚══════╩════╝     ╚═══════
 ```
 ## requirements
 
