@@ -440,6 +440,14 @@ disable_timesyncd() {
 
 
 ######################################################################
+install_ptp() {
+    echo -e "\e[32minstall_ptp()\e[0m";
+    sudo apt-get -y install ptpd;
+    sudo ethtool --set-eee eth0 eee off &>/dev/null;
+}
+
+
+######################################################################
 ## test commands
 ######################################################################
 #dmesg | grep pps
@@ -455,19 +463,25 @@ disable_timesyncd() {
 #xgps
 #gpsmon
 #ipcs -m
+#cat /proc/sysvipc/shm
 #ntpshmmon
 #
-#sudo systemctl stop chronyd.service;
-#sudo systemctl stop gpsd.socket;
-#sudo systemctl stop gpsd.service;
-#sudo systemctl start gpsd.service;
-#sudo systemctl start gpsd.socket;
-#sudo systemctl start chronyd.service;
+#sudo systemctl stop gpsd.* && sudo systemctl restart chrony && sudo systemctl start gpsd && echo Done.
 #
 #chronyc sources
 #chronyc sourcestats
 #chronyc tracking
-#watch -n 10 -p chronyc -m sources tracking
+#watch -n 10 -p sudo chronyc -m tracking sources sourcestats clients;
+#
+#nohz=off intel_idle.max_cstate=0
+#
+#CONFIG_PPS=y
+#CONFIG_PPS_CLIENT_LDISC=y
+#CONFIG_PPS_CLIENT_GPIO=y
+#CONFIG_GPIO_SYSFS=y
+#
+#CONFIG_DP83640_PHY=y
+#CONFIG_PTP_1588_CLOCK_PCH=y
 ######################################################################
 
 
@@ -484,8 +498,9 @@ disable_ntp;
 install_chrony;
 setup_chrony;
 
-handle_samba
-handle_dhcpcd
+install_ptp;
+handle_samba;
+handle_dhcpcd;
 
 
 ######################################################################
