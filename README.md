@@ -77,10 +77,11 @@ otherwise the PPS signal is seen as falsetick and will be rejected by chrony.
 
 depending on your GPS device the offset used in my script can be way too off.
 
-to adjust the offset of NMEA edit the file /etc/chrony/chrony.conf<br />
+to adjust the offset of NMEA edit the file `/etc/chrony/chrony.conf`
+
 refclock  SHM 0  refid NMEA  precision 1e-1  **offset _0.475_**  ...
 
-to find the actual offset, enable some NTP servers to use in the chrony.conf file<br />
+to find the actual offset, enable some NTP servers to be used in the chrony.conf file<br />
 and connect your RPi + GPS to the internet.
 keep the RPi + GPS + internet running for at least 30 minutes<br />
 after the GPS device finished its cold-/warm-start and got a proper GPS signal.
@@ -102,7 +103,7 @@ be sure you see on NMEA and your selected ntp server the value of 377 in the col
 in this example the current offset of NMEA is +480ms.<br />
 this would be too high to get a proper lock of PPS to NMEA in chrony.
 
-try to adjust the offset and restart the chrony service eych time you made adjustments:<br />
+try to adjust the offset and restart the chrony service each time you made adjustments:<br />
 `sudo systemctl restart chrony.service`
 
 as soon the offset is pernamently less than +/-200ms,<br />
@@ -123,7 +124,7 @@ it is available mostely as soon the GPS finished its cold- or warm- start<br />o
 - **PPS**, has the highest accuracy.<br />
 it is passed by the kernel to /dev/pps0.<br />
 in chrony there is a specifiy timing offset requirement to NMEA, that may cause the PPS to be seen as falsetick and may be rejected by chrony.
-- **PPSx**, is coming from the gpsd service via SHM 2 (shared memory) and is also a combination of NMEA and PPS, but handled by gpsd service.<br />
+- **PPSx**, is coming from the gpsd service via shared memory and is also a combination of NMEA and PPS, but handled by gpsd service.<br />
 it has a bit less accuracy than the PPS direckly.<br />
 gpsd is "_simulating_" PPS internaly, in the case there is no real PPS received on time.
 even there is no real PPS signal coming from the gps device on time, chrony will see the PPSx as trusted time reference.<br />
