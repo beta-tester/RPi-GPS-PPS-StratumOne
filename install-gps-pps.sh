@@ -247,7 +247,7 @@ setup_chrony() {
 ######################################################################
 #
 ## SHM(0), gpsd: NMEA data from shared memory provided by gpsd
-#refclock  SHM 0  refid NMEA  precision 1e-1  offset 0.6  delay 0.2  poll 3  trust  require
+#refclock  SHM 0  refid NMEA  precision 1e-1  offset 0.475  delay 0.2  poll 3  trust  require
 #
 ## PPS: /dev/pps0: Kernel-mode PPS ref-clock for the precise seconds
 #refclock  PPS /dev/pps0  refid PPS  precision 1e-9  lock NMEA  poll 3  trust  prefer
@@ -266,7 +266,7 @@ setup_chrony() {
 ######################################################################
 # https://chrony.tuxfamily.org/faq.html#_using_a_pps_reference_clock
 # SHM(0), gpsd: NMEA data from shared memory provided by gpsd
-refclock  SHM 0  refid NMEA  precision 1e-1  offset 0.6  delay 0.2  poll 3  noselect
+refclock  SHM 0  refid NMEA  precision 1e-1  offset 0.475  delay 0.2  poll 3  noselect
 
 # PPS: /dev/pps0: Kernel-mode PPS ref-clock for the precise seconds
 refclock  PPS /dev/pps0  refid PPS  precision 1e-9  lock NMEA  poll 3  noselect
