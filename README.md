@@ -123,7 +123,7 @@ once you got a good offset, you can use your RPi + GPS offline.
 it is available mostely as soon the GPS finished its cold- or warm- start<br />or immediately, when the device has an internal RTC with backup battery.
 - **PPS**, has the highest accuracy.<br />
 it is passed by the kernel to /dev/pps0.<br />
-in chrony there is a specifiy timing offset requirement to NMEA, that may cause the PPS to be seen as falsetick and may be rejected by chrony.
+in chrony there is a specific timing offset requirement to NMEA, that may cause the PPS to be seen as falsetick and may be rejected by chrony.
 - **PPSx**, is coming from the gpsd service via shared memory and is also a combination of NMEA and PPS, but handled by gpsd service.<br />
 it has a bit less accuracy than the PPS direckly.<br />
 gpsd is "_simulating_" PPS internaly, in the case there is no real PPS received on time.
