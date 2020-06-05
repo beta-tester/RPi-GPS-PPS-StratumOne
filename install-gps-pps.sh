@@ -252,11 +252,14 @@ setup_chrony() {
 ## PPS: /dev/pps0: Kernel-mode PPS ref-clock for the precise seconds
 #refclock  PPS /dev/pps0  refid PPS  precision 1e-9  lock NMEA  poll 3  trust  prefer
 #
+## SHM(1), gpsd: PPS data from shared memory provided by gpsd
+#refclock  SHM 1  refid PPSx  precision 1e-9  poll 3  trust
+#
 ## SHM(2), gpsd: PPS data from shared memory provided by gpsd
-#refclock  SHM 2  refid PPSx  precision 1e-8  poll 3  trust
+#refclock  SHM 2  refid PPSy  precision 1e-9  poll 3  trust
 #
 ## SOCK, gpsd: PPS data from socket provided by gpsd
-#refclock  SOCK /var/run/chrony.pps0.sock  refid PPSy  precision 1e-7  poll 3  trust
+#refclock  SOCK /var/run/chrony.pps0.sock  refid PPSz  precision 1e-9  poll 3  trust
 #
 ######################################################################
 ######################################################################
@@ -271,11 +274,14 @@ refclock  SHM 0  refid NMEA  precision 1e-1  offset 0.475  delay 0.2  poll 3  no
 # PPS: /dev/pps0: Kernel-mode PPS ref-clock for the precise seconds
 refclock  PPS /dev/pps0  refid PPS  precision 1e-9  lock NMEA  poll 3  noselect
 
+# SHM(1), gpsd: PPS data from shared memory provided by gpsd
+refclock  SHM 1  refid PPSx  precision 1e-9 poll 3  prefer
+
 # SHM(2), gpsd: PPS data from shared memory provided by gpsd
-refclock  SHM 2  refid PPSx  precision 1e-8 poll 3  prefer
+refclock  SHM 2  refid PPSy  precision 1e-9 poll 3
 
 # SOCK, gpsd: PPS data from socket provided by gpsd
-refclock  SOCK /var/run/chrony.pps0.sock  refid PPSy  precision 1e-7  poll 3
+refclock  SOCK /var/run/chrony.pps0.sock  refid PPSz  precision 1e-9  poll 3
 
 ######################################################################
 ######################################################################
@@ -320,6 +326,10 @@ logdir /var/log/chrony
 # Stop bad estimates upsetting machine clock.
 maxupdateskew 100.0
 
+# This directive enables hardware timestamping of NTP packets sent to and
+# received from the specified network interface.
+hwtimestamp *
+
 # This directive tells 'chronyd' to parse the 'adjtime' file to find out if the
 # real-time clock keeps local time or UTC. It overrides the 'rtconutc' directive.
 hwclockfile /etc/adjtime
@@ -331,12 +341,7 @@ rtcsync
 # Step the system clock instead of slewing it if the adjustment is larger than
 # one second, but only in the first three clock updates.
 #makestep 1 3
-
 makestep 0.2 -1
-
-# This directive enables hardware timestamping of NTP packets sent to and
-# received from the specified network interface.
-hwtimestamp *
 
 EOF
     sudo systemctl enable chronyd.service;
