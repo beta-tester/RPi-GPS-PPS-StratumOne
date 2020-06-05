@@ -333,6 +333,11 @@ rtcsync
 #makestep 1 3
 
 makestep 0.2 -1
+
+# This directive enables hardware timestamping of NTP packets sent to and
+# received from the specified network interface.
+hwtimestamp *
+
 EOF
     sudo systemctl enable chronyd.service;
     sudo systemctl restart chronyd.service;
