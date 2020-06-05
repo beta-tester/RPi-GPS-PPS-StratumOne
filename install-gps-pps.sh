@@ -442,8 +442,9 @@ disable_timesyncd() {
 ######################################################################
 install_ptp() {
     echo -e "\e[32minstall_ptp()\e[0m";
-    sudo apt-get -y install ptpd;
+    sudo apt-get -y install linuxptp;
     sudo ethtool --set-eee eth0 eee off &>/dev/null;
+    sudo systemctl --now enable ptp4l.service;
 }
 
 
