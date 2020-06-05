@@ -33,7 +33,7 @@ i did not keeped an eye on network security.
 ║ ╔═════╣      ║  │               ║                               ╔════════════
 ║ ║NMEA─╫──TX──╫─[+]─/dev/serial0─╫───┬───NMEA──o                 ║ CHRONY
 ║ ╠═════╣      ║                  ║   │                           ║
-║ ║ PPS─╫─GPIO─╫─────/dev/pps0────╫─┬─)───────────────────────────╫─PPS0─[+]──o
+║ ║ PPS─╫─GPIO─╫─────/dev/pps0────╫─┬─)───────────────────────────╫─PPS──[+]──o
 ╚═╩═════╝      ╚══════════════════╝ │ │ ╔═══════════════╗         ║       │
                                     │ │ ║ GPSD      ┌───╫─SHM0────╫─NMEA──┴───o
                                     │ │ ╠═════════╗ │   ║         ║
@@ -133,4 +133,8 @@ for this reason use PPSx, in case you have a weak intermitten PPS signal coming 
 it has the same accuracy as PPSx because they have the same time source.<br />
 - **PPSz**, is coming also from gpsd service like as PPSx but via a socket.<br />
 it has the same accuracy as PPSx because they have the same time source.<br />
-_the PPSy may break until the next system reboot, when the chrony.service is restarted._
+_the PPSz may break until the next system reboot, when the chrony.service is restarted._
+
+to restart chrony, use:<br />
+`sudo systemctl stop gpsd.* && sudo systemctl restart chrony && sudo systemctl start gpsd && echo Done.`<br />
+but this will break all connections to gpsd-clients.
