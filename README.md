@@ -28,19 +28,19 @@ i did not keeped an eye on network security.
 ### overview: path of time source
 (without external NTP servers)
 ```
-╔══════╗    ╔═══════════════╗
-║ GPS  ╫─RX─╫─┐ KERNEL      ║
-║ ╔════╣    ║ │             ║                       ╔═══════
-║ ║NMEA╫─TX─╫─┴─/dev/serial0╫───┐                   ║CHRONY
-║ ╠════╣    ║               ║   │                   ║
-║ ║ PPS╫GPIO╫───/dev/pps0───╫─┬─)───────────────────╫─PPS──o
-╚═╩════╝    ╚═══════════════╝ │ │ ╔═══════════╗     ║ (+)
-                              │ │ ║ GPSD   ┌──╫SHM0─╫─NMEA─o
-                              │ │ ╠══════╗ │  ║     ║
-                              │ └─╫NMEA┬─╫─┘┌─╫SHM2─╫─PPSx─o
-                              │   ║(+) ├─╫──┤ ║     ║
-                              └───╫PPS─┘ ║  └─╫SOCK─╫─PPSy─o
-                                  ╚══════╩════╝     ╚═══════
+╔═══════╗      ╔══════════════════╗
+║ GPS   ╫──RX──╫──┐ KERNEL        ║
+║ ╔═════╣      ║  │               ║                               ╔════════════
+║ ║NMEA─╫──TX──╫─[+]─/dev/serial0─╫───┬───NMEA──o                 ║ CHRONY
+║ ╠═════╣      ║                  ║   │                           ║
+║ ║ PPS─╫─GPIO─╫─────/dev/pps0────╫─┬─)───────────────────────────╫─PPS0─[+]──o
+╚═╩═════╝      ╚══════════════════╝ │ │ ╔═══════════════╗         ║       │
+                                    │ │ ║ GPSD      ┌───╫─SHM0────╫─NMEA──┴───o
+                                    │ │ ╠═════════╗ │   ║         ║
+                                    │ └─╫─NMEA─┬──╫─┘ ┌─╫─SHM1────╫─PPSx──────o
+                                    │   ║      │  ║   ├─╫─SHM2────╫─PPSy──────o
+                                    └───╫─PPS─[+]─╫───┴─╫─SOCK────╫─PPSz──────o
+                                        ╚═════════╩═════╝         ╚════════════
 ```
 ## requirements
 
@@ -129,6 +129,8 @@ it has a bit less accuracy than the PPS direckly.<br />
 gpsd is "_simulating_" PPS internaly, in the case there is no real PPS received on time.
 even there is no real PPS signal coming from the gps device on time, chrony will see the PPSx as trusted time reference.<br />
 for this reason use PPSx, in case you have a weak intermitten PPS signal coming from the gps device.
-- **PPSy**, is coming also from gpsd service like as PPSx but via a socket.<br />
+- **PPSy**, is coming also from gpsd service like as PPSx.<br />
+it has the same accuracy as PPSx because they have the same time source.<br />
+- **PPSz**, is coming also from gpsd service like as PPSx but via a socket.<br />
 it has the same accuracy as PPSx because they have the same time source.<br />
 _the PPSy may break until the next system reboot, when the chrony.service is restarted._
