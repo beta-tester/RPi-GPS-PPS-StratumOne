@@ -92,9 +92,9 @@ for example:
 MS Name/IP address         Stratum Poll Reach LastRx Last sample               
 ===============================================================================
 #? NMEA                          0   2   377     5   +480ms[ +480ms] +/-  200ms
-#? PPS                           0   2     0     0  +2000ms[+2000ms] +/- 2000ms
+#? PPS                           0   2     0     -     +0ns[   +0ns] +/-    0ns
 ...
-^- ptbtime1.ptb.de               1   4   377    79  -4924us[-4924us] +/-   13ms
+^* ptbtime1.ptb.de               1   4   377    79  -4924us[-4924us] +/-   13ms
 ...
 ```
 be sure you see on NMEA and your selected ntp server the value of 377 in the column "reach".
