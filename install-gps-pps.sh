@@ -1,17 +1,24 @@
 #!/bin/bash
 
 ######################################################################
-# 2020-02-13-raspbian-buster-lite
+# tested on RPi4B and 2020-05-27-raspios-buster-armhf.zip
 
 BACKUP_FILE=backup.tar.xz
 
 ##################################################################
+SCRIPT_DIR=`dirname "${BASH_SOURCE[0]}"`
+if ! [ -d "$SCRIPT_DIR/etc/chrony/stratum1" ]; then
+    echo -e "\e[1;31m'$SCRIPT_DIR'\e[0m";
+    echo -e "\e[1;31mcan not find required files\e[0m";
+    exit 1
+fi
+
+##################################################################
 # if a GPS module is already installed and is giving GPS feed on the GPIO-serial port,
 # it can generate error messages to the console, because the kernel try to interprete this as commands from the boot console
-sudo systemctl stop serial-getty@serial0.service;
-sudo systemctl stop serial-getty@ttyAMA0.service;
-sudo systemctl disable serial-getty@serial0.service;
-sudo systemctl disable serial-getty@ttyAMA0.service;
+sudo systemctl --now disable serial-getty@serial0.service;
+sudo systemctl --now disable serial-getty@ttyAMA0.service;
+sudo systemctl --now disable hciuart.service;
 
 
 ######################################################################
@@ -47,10 +54,9 @@ handle_gps() {
     echo -e "\e[36m    prepare GPS\e[0m";
     ##################################################################
     echo -e "\e[36m    make boot quiet to serial port: serial0\e[0m";
-    sudo systemctl stop serial-getty@serial0.service;
-    sudo systemctl stop serial-getty@ttyAMA0.service;
-    sudo systemctl disable serial-getty@serial0.service;
-    sudo systemctl disable serial-getty@ttyAMA0.service;
+    sudo systemctl --now disable serial-getty@serial0.service;
+    sudo systemctl --now disable serial-getty@ttyAMA0.service;
+    sudo systemctl --now disable hciuart.service;
     tar -ravf $BACKUP_FILE -C / boot/cmdline.txt
     sudo sed -i -e "s/console=serial0,115200//" /boot/cmdline.txt;
     sudo sed -i -e "s/console=ttyAMA0,115200//" /boot/cmdline.txt;
@@ -64,8 +70,7 @@ handle_gps() {
 
     ##################################################################
     echo -e "\e[36m    setup gpsd\e[0m";
-    sudo systemctl stop gpsd.socket;
-    sudo systemctl stop gpsd.service;
+    sudo systemctl stop gpsd.*;
 
     tar -ravf $BACKUP_FILE -C / etc/default/gpsd
     cat << EOF | sudo tee /etc/default/gpsd &>/dev/null
@@ -101,34 +106,6 @@ EOF
 EOF
     }
 
-    grep -q mod_install_stratum_one /etc/rc.local &>/dev/null || {
-        echo -e "\e[36m    tweak GPS device at start up\e[0m";
-        tar -ravf $BACKUP_FILE -C / etc/rc.local
-        sudo sed /etc/rc.local -i -e "s/^exit 0$//";
-        printf "## mod_install_stratum_one
-#sudo systemctl stop gpsd.socket;
-#sudo systemctl stop gpsd.service;
-
-# default GPS device settings at power on
-#stty -F /dev/ttyAMA0 9600
-
-## custom GPS device settings
-## 115200baud io rate,
-#printf \x27\x24PMTK251,115200*1F\x5Cr\x5Cn\x27 \x3E /dev/ttyAMA0
-#stty -F /dev/ttyAMA0 115200
-## 10 Hz update interval
-#printf \x27\x24PMTK220,100*2F\x5Cr\x5Cn\x27 \x3E /dev/ttyAMA0
-
-#sudo systemctl restart gpsd.socket;
-#sudo systemctl restart gpsd.service;
-
-# workaround: lets start any gps client to forct gps service to wakeup and work
-#gpspipe -r -n 1 &>/dev/null &
-
-exit 0
-" | sudo tee -a /etc/rc.local > /dev/null;
-    }
-
     [ -f "/etc/dhcp/dhclient-exit-hooks.d/ntp" ] && {
         tar -ravf $BACKUP_FILE -C / etc/dhcp/dhclient-exit-hooks.d/ntp
         sudo rm -f /etc/dhcp/dhclient-exit-hooks.d/ntp;
@@ -139,7 +116,6 @@ exit 0
         tar -ravf $BACKUP_FILE -C / etc/udev/rules.d/99-gps.rules
         cat << EOF | sudo tee /etc/udev/rules.d/99-gps.rules &>/dev/null
 ## mod_install_stratum_one
-
 KERNEL=="pps0",SYMLINK+="gpspps0"
 KERNEL=="ttyAMA0", SYMLINK+="gps0"
 EOF
@@ -161,7 +137,7 @@ handle_pps() {
         echo -e "\e[36m    setup config.txt for PPS\e[0m";
         tar -ravf $BACKUP_FILE -C / boot/config.txt
         cat << EOF | sudo tee -a /boot/config.txt &>/dev/null
-
+[all]
 #########################################
 # https://www.raspberrypi.org/documentation/configuration/config-txt.md
 # https://github.com/raspberrypi/firmware/tree/master/boot/overlays
@@ -174,17 +150,25 @@ handle_pps() {
 #Load:   dtoverlay=pps-gpio,<param>=<val>
 #Params: gpiopin                 Input GPIO (default "18")
 #        assert_falling_edge     When present, assert is indicated by a falling
-#                                edge, rather than by a rising edge
+#                                edge, rather than by a rising edge (default
+#                                off)
+#        capture_clear           Generate clear events on the trailing edge
+#                                (default off)
 # dtoverlay=pps-gpio,gpiopin=4,assert_falling_edge
 dtoverlay=pps-gpio,gpiopin=4
 
-#Name:   pi3-disable-bt
-#Info:   Disable Pi3 Bluetooth and restore UART0/ttyAMA0 over GPIOs 14 & 15
+
+#Name:   disable-bt
+#Info:   Disable onboard Bluetooth on Pi 3B, 3B+, 3A+, 4B and Zero W, restoring
+#        UART0/ttyAMA0 over GPIOs 14 & 15.
 #        N.B. To disable the systemd service that initialises the modem so it
 #        doesn't use the UART, use 'sudo systemctl disable hciuart'.
-#Load:   dtoverlay=pi3-disable-bt
+#Load:   dtoverlay=disable-bt
 #Params: <None>
+dtoverlay=disable-bt
+#alias for backwards compatibility.
 dtoverlay=pi3-disable-bt
+
 
 # Enable UART
 enable_uart=1
@@ -204,8 +188,7 @@ EOF
 ######################################################################
 disable_ntp() {
     echo -e "\e[32mdisable_ntp()\e[0m";
-    sudo systemctl stop ntp.service &>/dev/null;
-    sudo systemctl disable ntp.service &>/dev/null;
+    sudo systemctl --now disable ntp.service &>/dev/null;
 }
 
 
@@ -214,8 +197,8 @@ disable_ntp() {
 ######################################################################
 install_chrony() {
     echo -e "\e[32minstall_chrony()\e[0m";
-
     sudo apt-get -y install chrony;
+    sudo apt install -y --no-install-recommends gnuplot;
 }
 
 
@@ -226,124 +209,10 @@ setup_chrony() {
     sudo systemctl stop chronyd.service;
 
     tar -ravf $BACKUP_FILE -C / etc/chrony/chrony.conf
-    cat << EOF | sudo tee /etc/chrony/chrony.conf &>/dev/null
-# /etc/chrony/chrony.conf
-## mod_install_stratum_one
-## mod_install_server
+    sudo mv /etc/chrony/chrony.conf{,.original}
 
-# https://chrony.tuxfamily.org/documentation.html
-# http://www.catb.org/gpsd/gpsd-time-service-howto.html#_feeding_chrony_from_gpsd
-# gspd is looking for
-# /var/run/chrony.pps0.sock
-# /var/run/chrony.ttyAMA0.sock
+    sudo cp -Rv $SCRIPT_DIR/etc/chrony/* /etc/chrony/;
 
-
-# Welcome to the chrony configuration file. See chrony.conf(5) for more
-# information about usuable directives.
-
-
-######################################################################
-# full offline settings
-######################################################################
-#
-## SHM(0), gpsd: NMEA data from shared memory provided by gpsd
-#refclock  SHM 0  refid NMEA  precision 1e-1  offset 0.475  delay 0.2  poll 3  trust  require
-#
-## PPS: /dev/pps0: Kernel-mode PPS ref-clock for the precise seconds
-#refclock  PPS /dev/pps0  refid PPS  precision 1e-9  lock NMEA  poll 3  trust  prefer
-#
-## SHM(1), gpsd: PPS data from shared memory provided by gpsd
-#refclock  SHM 1  refid PPSx  precision 1e-9  poll 3  trust
-#
-## SHM(2), gpsd: PPS data from shared memory provided by gpsd
-#refclock  SHM 2  refid PPSy  precision 1e-9  poll 3  trust
-#
-## SOCK, gpsd: PPS data from socket provided by gpsd
-#refclock  SOCK /var/run/chrony.pps0.sock  refid PPSz  precision 1e-9  poll 3  trust
-#
-######################################################################
-######################################################################
-
-######################################################################
-# combined offline and online settings
-######################################################################
-# https://chrony.tuxfamily.org/faq.html#_using_a_pps_reference_clock
-# SHM(0), gpsd: NMEA data from shared memory provided by gpsd
-refclock  SHM 0  refid NMEA  precision 1e-1  offset 0.475  delay 0.2  poll 3  noselect
-
-# PPS: /dev/pps0: Kernel-mode PPS ref-clock for the precise seconds
-refclock  PPS /dev/pps0  refid PPS  precision 1e-9  lock NMEA  poll 3  noselect
-
-# SHM(1), gpsd: PPS data from shared memory provided by gpsd
-refclock  SHM 1  refid PPSx  precision 1e-9 poll 3  prefer
-
-# SHM(2), gpsd: PPS data from shared memory provided by gpsd
-refclock  SHM 2  refid PPSy  precision 1e-9 poll 3
-
-# SOCK, gpsd: PPS data from socket provided by gpsd
-refclock  SOCK /var/run/chrony.pps0.sock  refid PPSz  precision 1e-9  poll 3
-
-######################################################################
-######################################################################
-
-# any NTP clients are allowed to access the NTP server.
-allow
-
-# allows to appear synchronised to NTP clients, even when it is not.
-local
-
-
-# some Stratum1 Servers
-# https://www.meinbergglobal.com/english/glossary/public-time-server.htm
-#
-## Physikalisch-Technische Bundesanstalt (PTB), Braunschweig, Germany
-#server  ptbtime1.ptb.de  iburst  minpoll 4  maxpoll 4
-#server  ptbtime2.ptb.de  iburst  minpoll 4  maxpoll 4
-#server  ptbtime3.ptb.de  iburst  minpoll 4  maxpoll 4
-#
-## Royal Observatory of Belgium
-#server  ntp1.oma.be  iburst  minpoll 4  maxpoll 4
-#server  ntp2.oma.be  iburst  minpoll 4  maxpoll 4
-
-# Other NTP Servers
-#pool  de.pool.ntp.org  iburst  minpoll 4  maxpoll 4
-
-
-# This directive specify the location of the file containing ID/key pairs for
-# NTP authentication.
-keyfile /etc/chrony/chrony.keys
-
-# This directive specify the file into which chronyd will store the rate
-# information.
-driftfile /var/lib/chrony/chrony.drift
-
-# Uncomment the following line to turn logging on.
-#log tracking measurements statistics
-
-# Log files location.
-logdir /var/log/chrony
-
-# Stop bad estimates upsetting machine clock.
-maxupdateskew 100.0
-
-# This directive enables hardware timestamping of NTP packets sent to and
-# received from the specified network interface.
-hwtimestamp *
-
-# This directive tells 'chronyd' to parse the 'adjtime' file to find out if the
-# real-time clock keeps local time or UTC. It overrides the 'rtconutc' directive.
-hwclockfile /etc/adjtime
-
-# This directive enables kernel synchronisation (every 11 minutes) of the
-# real-time clock. Note that it can’t be used along with the 'rtcfile' directive.
-rtcsync
-
-# Step the system clock instead of slewing it if the adjustment is larger than
-# one second, but only in the first three clock updates.
-#makestep 1 3
-makestep 0.2 -1
-
-EOF
     sudo systemctl enable chronyd.service;
     sudo systemctl restart chronyd.service;
 }
@@ -352,8 +221,7 @@ EOF
 ######################################################################
 disable_chrony() {
     echo -e "\e[32mdisable_chrony()\e[0m";
-    sudo systemctl stop chronyd.service &>/dev/null;
-    sudo systemctl disable chronyd.service &>/dev/null;
+    sudo systemctl --now disable chronyd.service &>/dev/null;
 }
 
 
@@ -474,7 +342,6 @@ install_ptp() {
 #xgps
 #gpsmon
 #ipcs -m
-#cat /proc/sysvipc/shm
 #ntpshmmon
 #
 #sudo systemctl stop gpsd.* && sudo systemctl restart chrony && sudo systemctl start gpsd && echo Done.
@@ -483,16 +350,31 @@ install_ptp() {
 #chronyc sourcestats
 #chronyc tracking
 #watch -n 10 -p sudo chronyc -m tracking sources sourcestats clients;
-#
+######################################################################
+
+######################################################################
+# kernel config
+######################################################################
 #nohz=off intel_idle.max_cstate=0
 #
+### PPS (default in Raspberry Pi OS)
 #CONFIG_PPS=y
 #CONFIG_PPS_CLIENT_LDISC=y
 #CONFIG_PPS_CLIENT_GPIO=y
 #CONFIG_GPIO_SYSFS=y
 #
+### PTP (optional addition)
 #CONFIG_DP83640_PHY=y
 #CONFIG_PTP_1588_CLOCK_PCH=y
+#
+### KPPS + tuning (optional addition)
+#CONFIG_NTP_PPS=y
+#CONFIG_PREEMPT_NONE=y
+## CONFIG_PREEMPT_VOLUNTARY is not set
+## CONFIG_NO_HZ is not set
+## CONFIG_HZ_100 is not set
+#CONFIG_HZ_1000=y
+#CONFIG_HZ=1000
 ######################################################################
 
 
