@@ -1,0 +1,55 @@
+################################################################################
+# 1. keep chrony running for at least 30 minutes.
+#    for method 2.2 see below, the longer you keep it running the better it is.
+#    best is to keep it running for 12h
+# 2. measure the offset of the NMEA data
+# 2.1. for graphical desktop only, run:
+#    :~ $ gnuplot ~/RPi-GPS-PPS-StratumOne/gnuplot/99-calibrate-offset-nmea.gnuplot
+# 2.2. for console only, run:
+#    :~ $ gpspipe -ru | grep --line-buffered GGA | cut -b 20-26
+# 3. change the value to bring down the offset of NMEA lower than +/-200 ms
+# 3.1. from gnuplot, take x-value of the highest spike as offset value of what you got under step 2.1.
+# 3.2. from gpspipe, take the average as offset value of what you got under 2.2.
+# 4. delete old log files and restart gpsd and chrony with:
+#    :~ $ sudo rm -r /var/log/chrony/*.log && sudo systemctl stop gpsd.* \
+#         && sudo systemctl restart chrony && sudo systemctl start gpsd \
+#         && echo Done.
+################################################################################
+refclock  SHM 0  refid NMEA  precision 1e-1  poll 3  offset 0.475  delay 0.2  noselect
+
+
+################################################################################
+logdir /var/log/chrony
+log refclocks
+logbanner 0
+
+################################################################################
+keyfile /etc/chrony/chrony.keys
+driftfile /var/lib/chrony/chrony.drift
+maxupdateskew 100.0
+makestep 1 3
+
+################################################################################
+refclock  SHM 2  refid PPSy  precision 1e-9  poll 3
+################################################################################
+pool  pool.ntp.org           iburst minpoll 3  maxpoll 4
+pool  2.debian.pool.ntp.org  iburst minpoll 3  maxpoll 4
+
+################################################################################
+# some random stratum one server from
+# http://support.ntp.org/bin/view/Servers/StratumOneTimeServers
+################################################################################
+server  byrpi1.dynu.net          iburst  minpoll 3  maxpoll 4
+server  chronos.asda.gr          iburst  minpoll 3  maxpoll 4
+server  ntp1.vniiftri.ru         iburst  minpoll 3  maxpoll 4
+server  ntp.silvertree.org       iburst  minpoll 3  maxpoll 4
+server  lrte.ntp.ifsc.usp.br     iburst  minpoll 3  maxpoll 4
+server  ntp1.torix.ca            iburst  minpoll 3  maxpoll 4
+server  hora.roa.es              iburst  minpoll 3  maxpoll 4
+server  ntp1.dyn.vranetworks.mx  iburst  minpoll 3  maxpoll 4
+server  sth1.ntp.se              iburst  minpoll 3  maxpoll 4
+server  ntp1.sptime.se           iburst  minpoll 3  maxpoll 4
+server  ntp.ntp-servers.com      iburst  minpoll 3  maxpoll 4
+server  ntp1.itcompliance.dk     iburst  minpoll 3  maxpoll 4
+server  clock1.infonet.ee        iburst  minpoll 3  maxpoll 4
+server  ntp1.leontp.com          iburst  minpoll 3  maxpoll 4
