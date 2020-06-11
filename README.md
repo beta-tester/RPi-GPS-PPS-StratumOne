@@ -33,7 +33,7 @@ i did not keeped an eye on network security.
 ║ ╔═════╣      ║  │               ║                             ╔════════════
 ║ ║NMEA─╫──TX──╫─[+]─/dev/serial0─╫───┬───NMEA──x               ║ CHRONY
 ║ ╠═════╣      ║                  ║   │                         ║
-║ ║ PPS─╫─GPIO─╫─────/dev/pps0────╫─┬─)─────────────────────────╫──[+]──PPS─
+║ ║ PPS─╫─GPIO─╫─────/dev/pps0────╫─┬─)─────────────────────────╫──[+]─PPS0─
 ╚═╩═════╝      ╚══════════════════╝ │ │ ╔═══════════════╗       ║   │
                                     │ │ ║ GPSD      ┌───╫─SHM0──╫───┴──NMEA─
                                     │ │ ╠═════════╗ │   ║       ║
@@ -104,7 +104,7 @@ once you got a good offset, you can use your RPi + GPS offline.
 ### note2:
 - **NMEA**, has an accuracy of about +/-200ms.<br />
 it is available mostely as soon the GPS finished its cold- or warm- start<br />or immediately, when the device has an internal RTC with backup battery.
-- **PPS**, has the highest accuracy.<br />
+- **PPS0**, has the highest accuracy.<br />
 it is passed by the kernel to /dev/pps0.<br />
 in chrony there is a specific timing offset requirement to NMEA, that may cause the PPS to be seen as falsetick and may be rejected by chrony.
 - **PPSx**, is coming from the gpsd service via shared memory and is also a combination of NMEA and PPS, but handled by gpsd service.<br />
