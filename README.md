@@ -85,7 +85,7 @@ to find the actual offset, you can use gnuplot (already installed by the script)
 and run the plot script 99-calibrate-offset-nmea.gnuplot
 to visualise the actual histogramm of the measured offsets.<br />
 ```
-# stop gpsd, stop chony, delete all log files, restart chrons and gpsd
+# stop gpsd abd chony, delete all log files, restart chrony and gpsd
 # wait few seconds to give time to create a log file,
 # and start the histogram.
 
@@ -98,7 +98,7 @@ gnuplot ~/RPi-GPS-PPS-StratumOne/gnuplot/99-calibrate-offset-nmea.gnuplot
 the histogram will updated every minute. keep it running for at least 30 minutes.
 the monger you keep it running the better offset value you can find.
 
-the x-value onf the highest spike in the histogramm is the offset value for the NMEA you can 
+the x-value of the highest spike in the histogram is the offset value for the NMEA you can 
 once you got a good offset, you can use your RPi + GPS offline.
 
 ### note2:
