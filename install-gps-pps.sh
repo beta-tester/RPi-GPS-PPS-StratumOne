@@ -92,9 +92,8 @@ DEVICES="/dev/ttyAMA0 /dev/pps0"
 # Other options you want to pass to gpsd
 GPSD_OPTIONS="-n -r -b"
 EOF
-    sudo systemctl restart gpsd.socket;
-    sudo systemctl enable gpsd.service;
-    sudo systemctl restart gpsd.service;
+    sudo systemctl enable gpsd;
+    sudo systemctl restart gpsd;
 
     ##################################################################
     grep -q mod_install_stratum_one /lib/systemd/system/gpsd.socket &>/dev/null || {
@@ -188,7 +187,7 @@ EOF
 ######################################################################
 disable_ntp() {
     echo -e "\e[32mdisable_ntp()\e[0m";
-    sudo systemctl --now disable ntp.service &>/dev/null;
+    sudo systemctl --now disable ntp &>/dev/null;
 }
 
 
@@ -206,22 +205,22 @@ install_chrony() {
 setup_chrony() {
     echo -e "\e[32msetup_chrony()\e[0m";
 
-    sudo systemctl stop chronyd.service;
+    sudo systemctl stop chrony;
 
     tar -ravf $BACKUP_FILE -C / etc/chrony/chrony.conf
     sudo mv /etc/chrony/chrony.conf{,.original}
 
     sudo cp -Rv $SCRIPT_DIR/etc/chrony/* /etc/chrony/;
 
-    sudo systemctl enable chronyd.service;
-    sudo systemctl restart chronyd.service;
+    sudo systemctl enable chrony;
+    sudo systemctl restart chrony;
 }
 
 
 ######################################################################
 disable_chrony() {
     echo -e "\e[32mdisable_chrony()\e[0m";
-    sudo systemctl --now disable chronyd.service &>/dev/null;
+    sudo systemctl --now disable chrony &>/dev/null;
 }
 
 
