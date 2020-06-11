@@ -86,13 +86,13 @@ and run the plot script 99-calibrate-offset-nmea.gnuplot
 to visualise the actual histogramm of the measured offsets.<br />
 ```
 # stop gpsd, stop chony, delete all log files, restart chrons and gpsd
-# wait one minute to give time to create a log file,
+# wait few seconds to give time to create a log file,
 # and start the histogram.
 
 sudo systemctl stop gpsd.* && sudo systemctl stop chrony && \
 sudo rm -r /var/log/chrony/*.log && \
 sudo systemctl start chrony && sudo systemctl start gpsd && \
-sleep 60 && \
+sleep 10 && \
 gnuplot ~/RPi-GPS-PPS-StratumOne/gnuplot/99-calibrate-offset-nmea.gnuplot
 ```
 the histogram will updated every minute. keep it running for at least 30 minutes.
