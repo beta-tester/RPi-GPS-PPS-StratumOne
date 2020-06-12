@@ -46,9 +46,9 @@ handle_gps() {
     ##################################################################
     echo -e "\e[36m    prepare GPS\e[0m";
     ##################################################################
-    echo -e "\e[36m    enable serial port\e[0m";
-    tar -ravf $BACKUP_FILE -C / boot/cmdline.txt
+    echo -e "\e[36m    setup serial port: /dev/ttyAMA0\e[0m";
     sudo raspi-config nonint do_serial 2;
+    sudo systemctl disable --now hciuart;
 
     ##################################################################
     echo -e "\e[36m    install gpsd\e[0m";
@@ -76,9 +76,9 @@ USBAUTO="true"
 
 # Devices gpsd should collect to at boot time.
 # They need to be read/writeable, either by user gpsd or the group dialout.
-DEVICES="/dev/serial0 /dev/pps0"
+DEVICES="/dev/ttyAMA0 /dev/pps0"
 # in case you have two pps devices connected
-#DEVICES="/dev/serial0 /dev/pps0 /dev/pps1"
+#DEVICES="/dev/ttyAMA0 /dev/pps0 /dev/pps1"
 
 # Other options you want to pass to gpsd
 GPSD_OPTIONS="-n -r -b"
@@ -90,7 +90,8 @@ EOF
     grep -q mod_install_stratum_one /lib/systemd/system/gpsd.socket &>/dev/null || {
         echo -e "\e[36m    fix gpsd to listen to all connection requests\e[0m";
         tar -ravf $BACKUP_FILE -C / lib/systemd/system/gpsd.socket
-        sudo sed /lib/systemd/system/gpsd.socket -i -e "s/ListenStream=127.0.0.1:2947/ListenStream=0.0.0.0:2947/";
+        sudo sed /lib/systemd/system/gpsd.socket -i -e "s/ListenStream=[::1]:2947/ListenStream=2947/";
+        sudo sed /lib/systemd/system/gpsd.socket -i -e "s/ListenStream=127.0.0.1:2947/#ListenStream=127.0.0.1:2947/";
         cat << EOF | sudo tee -a /lib/systemd/system/gpsd.socket &>/dev/null
 ;; mod_install_stratum_one
 EOF
@@ -123,6 +124,16 @@ handle_pps() {
 ## mod_install_stratum_one
 
 # gps + pps + ntp settings
+
+#Name:   disable-bt
+#Info:   Disable onboard Bluetooth on Pi 3B, 3B+, 3A+, 4B and Zero W, restoring
+#        UART0/ttyAMA0 over GPIOs 14 & 15.
+#        N.B. To disable the systemd service that initialises the modem so it
+#        doesn't use the UART, use 'sudo systemctl disable hciuart'.
+#Load:   dtoverlay=disable-bt
+#Params: <None>
+dtoverlay=disable-bt
+
 
 #Name:   pps-gpio
 #Info:   Configures the pps-gpio (pulse-per-second time signal via GPIO).
@@ -298,11 +309,11 @@ install_ptp() {
 #sudo ppstest /dev/pps0
 #sudo ppswatch -a /dev/pps0
 #
-#sudo gpsd -D 5 -N -n /dev/serial0 /dev/pps0 -F /var/run/gpsd.sock
+#sudo gpsd -D 5 -N -n /dev/ttyAMA0 /dev/pps0 -F /var/run/gpsd.sock
 #sudo systemctl stop gpsd.*
 #sudo killall -9 gpsd
 #sudo dpkg-reconfigure -plow gpsd
-#minicom -b 9600 -o -D /dev/serial0
+#minicom -b 9600 -o -D /dev/ttyAMA0
 #cgps
 #xgps
 #gpsmon
