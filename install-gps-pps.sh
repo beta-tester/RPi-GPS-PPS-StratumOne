@@ -87,7 +87,9 @@ USBAUTO="true"
 
 # Devices gpsd should collect to at boot time.
 # They need to be read/writeable, either by user gpsd or the group dialout.
-DEVICES="/dev/ttyAMA0 /dev/pps0"
+DEVICES="/dev/serial0 /dev/pps0"
+# in case you have two pps devices connected
+#DEVICES="/dev/serial0 /dev/pps0 /dev/pps1"
 
 # Other options you want to pass to gpsd
 GPSD_OPTIONS="-n -r -b"
@@ -108,17 +110,6 @@ EOF
     [ -f "/etc/dhcp/dhclient-exit-hooks.d/ntp" ] && {
         tar -ravf $BACKUP_FILE -C / etc/dhcp/dhclient-exit-hooks.d/ntp
         sudo rm -f /etc/dhcp/dhclient-exit-hooks.d/ntp;
-    }
-
-    [ -f "/etc/udev/rules.d/99-gps.rules" ] || {
-        echo -e "\e[36m    create rule to create symbolic link\e[0m";
-        tar -ravf $BACKUP_FILE -C / etc/udev/rules.d/99-gps.rules
-        cat << EOF | sudo tee /etc/udev/rules.d/99-gps.rules &>/dev/null
-## mod_install_stratum_one
-KERNEL=="pps0",SYMLINK+="gpspps0"
-KERNEL=="ttyAMA0", SYMLINK+="gps0"
-EOF
-        sudo udevadm control --reload-rules;
     }
 }
 
@@ -153,8 +144,10 @@ handle_pps() {
 #                                off)
 #        capture_clear           Generate clear events on the trailing edge
 #                                (default off)
-# dtoverlay=pps-gpio,gpiopin=4,assert_falling_edge
-dtoverlay=pps-gpio,gpiopin=4
+# note, the last listed entry will become /dev/pps0
+# dtoverlay=pps-gpio,gpiopin=4,assert_falling_edge,capture_clear
+#dtoverlay=pps-gpio,gpiopin=7,capture_clear  # /dev/pps1
+dtoverlay=pps-gpio,gpiopin=4,capture_clear  # /dev/pps0
 
 
 #Name:   disable-bt
@@ -332,11 +325,11 @@ install_ptp() {
 #sudo ppstest /dev/pps0
 #sudo ppswatch -a /dev/pps0
 #
-#sudo gpsd -D 5 -N -n /dev/ttyAMA0 /dev/pps0 -F /var/run/gpsd.sock
+#sudo gpsd -D 5 -N -n /dev/serial0 /dev/pps0 -F /var/run/gpsd.sock
 #sudo systemctl stop gpsd.*
 #sudo killall -9 gpsd
 #sudo dpkg-reconfigure -plow gpsd
-#minicom -b 9600 -o -D /dev/ttyAMA0
+#minicom -b 9600 -o -D /dev/serial0
 #cgps
 #xgps
 #gpsmon
