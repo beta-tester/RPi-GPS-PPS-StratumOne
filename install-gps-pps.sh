@@ -48,8 +48,7 @@ handle_gps() {
     ##################################################################
     echo -e "\e[36m    enable serial port\e[0m";
     tar -ravf $BACKUP_FILE -C / boot/cmdline.txt
-    sudo raspi-config nonint do_serial_hw 0;
-    sudo raspi-config nonint do_serial 1;
+    sudo raspi-config nonint do_serial 2;
 
     ##################################################################
     echo -e "\e[36m    install gpsd\e[0m";
