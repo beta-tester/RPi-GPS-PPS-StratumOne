@@ -31,7 +31,7 @@ makestep 1 3
 
 ################################################################################
 refclock  SHM 1  refid PSM0  precision 1e-9  poll 3
-refclock  SHM 2  refid PSM1  precision 1e-9  poll 3
+refclock  SHM 2  refid PSMD  precision 1e-9  poll 3
 ################################################################################
 pool  pool.ntp.org           iburst minpoll 3  maxpoll 4
 pool  2.debian.pool.ntp.org  iburst minpoll 3  maxpoll 4
