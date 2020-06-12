@@ -15,17 +15,6 @@ fi
 
 
 ######################################################################
-handle_timezone() {
-    echo -e "\e[32mhandle_timezone()\e[0m";
-
-    echo -e "\e[36m    prepare timezone to Etc/UTC\e[0m";
-    tar -ravf $BACKUP_FILE -C / etc/timezone
-    echo 'Etc/UTC' | sudo tee /etc/timezone &>/dev/null
-    sudo dpkg-reconfigure -f noninteractive tzdata;
-}
-
-
-######################################################################
 handle_update() {
     echo -e "\e[32mhandle_update()\e[0m";
 
@@ -161,15 +150,13 @@ EOF
 
 
 ######################################################################
-######################################################################
 disable_ntp() {
     echo -e "\e[32mdisable_ntp()\e[0m";
-    sudo systemctl --now disable ntp &>/dev/null;
+    sudo systemctl disable --now ntp &>/dev/null;
 }
 
 
 
-######################################################################
 ######################################################################
 install_chrony() {
     echo -e "\e[32minstall_chrony()\e[0m";
@@ -195,110 +182,11 @@ setup_chrony() {
 
 
 ######################################################################
-disable_chrony() {
-    echo -e "\e[32mdisable_chrony()\e[0m";
-    sudo systemctl --now disable chrony &>/dev/null;
-}
-
-
-
-######################################################################
-handle_samba() {
-    echo -e "\e[32mhandle_samba()\e[0m";
-
-    ##################################################################
-    echo -e "\e[36m  install samba\e[0m";
-    sudo apt-get -y install samba;
-
-    ##################################################################
-    [ -d "/media/share" ] || {
-        echo -e "\e[36m  create share folder\e[0m";
-        sudo mkdir -p /media/share;
-    }
-
-    ##################################################################
-    grep -q mod_install_stratum_one /etc/samba/smb.conf &>/dev/null || \
-    grep -q mod_install_server      /etc/samba/smb.conf &>/dev/null || \
-    {
-        echo -e "\e[36m  setup samba\e[0m";
-        sudo systemctl stop smb.service;
-
-        tar -ravf $BACKUP_FILE -C / etc/samba/smb.conf
-        #sudo sed -i /etc/samba/smb.conf -n -e "1,/#======================= Share Definitions =======================/p";
-        cat << EOF | sudo tee -a /etc/samba/smb.conf &>/dev/null
-## mod_install_stratum_one
-## mod_install_server
-
-[share]
-  comment = Share
-  path = /media/share/
-  public = yes
-  only guest = yes
-  browseable = yes
-  read only = no
-  writeable = yes
-  create mask = 0644
-  directory mask = 0755
-  force create mode = 0644
-  force directory mode = 0755
-  force user = root
-  force group = root
-
-[ntpstats]
-  comment = NTP Statistics
-  path = /var/log/chrony/
-  public = yes
-  only guest = yes
-  browseable = yes
-  read only = yes
-  writeable = no
-  create mask = 0644
-  directory mask = 0755
-  force create mode = 0644
-  force directory mode = 0755
-  force user = root
-  force group = root
-EOF
-        sudo systemctl restart smbd.service;
-    }
-}
-
-
-######################################################################
-handle_dhcpcd() {
-    echo -e "\e[32mhandle_dhcpcd()\e[0m";
-
-    grep -q mod_install_stratum_one /etc/dhcpcd.conf || \
-    grep -q mod_install_server      /etc/dhcpcd.conf || \
-    {
-        echo -e "\e[36m    setup dhcpcd.conf\e[0m";
-        tar -ravf $BACKUP_FILE -C / etc/dhcpcd.conf
-        cat << EOF | sudo tee -a /etc/dhcpcd.conf &>/dev/null
-## mod_install_stratum_one
-#interface eth0
-#static ip_address=192.168.1.101/24
-#static routers=192.168.1.1
-#static domain_name_servers=192.168.1.1
-EOF
-    }
-}
-
-
-######################################################################
-disable_timesyncd() {
-    echo -e "\e[32mdisable_timesyncd()\e[0m";
-    sudo systemctl stop systemd-timesyncd
-    sudo systemctl daemon-reload
-    sudo systemctl disable systemd-timesyncd
-}
-
-
-######################################################################
 install_ptp() {
     echo -e "\e[32minstall_ptp()\e[0m";
     sudo apt-get -y install linuxptp;
     sudo ethtool --set-eee eth0 eee off &>/dev/null;
-    sudo systemctl --now enable ptp4l.service;
+    sudo systemctl enable --now ptp4l.service;
 }
 
 
@@ -354,22 +242,17 @@ install_ptp() {
 ######################################################################
 
 
-handle_timezone
-
 handle_update
 
 handle_gps
 handle_pps
 
-disable_timesyncd;
 disable_ntp;
 
 install_chrony;
 setup_chrony;
 
 install_ptp;
-handle_samba;
-handle_dhcpcd;
 
 
 ######################################################################
