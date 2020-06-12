@@ -13,13 +13,6 @@ if ! [ -d "$SCRIPT_DIR/etc/chrony/stratum1" ]; then
     exit 1
 fi
 
-##################################################################
-# if a GPS module is already installed and is giving GPS feed on the GPIO-serial port,
-# it can generate error messages to the console, because the kernel try to interprete this as commands from the boot console
-sudo systemctl --now disable serial-getty@serial0.service;
-sudo systemctl --now disable serial-getty@ttyAMA0.service;
-sudo systemctl --now disable hciuart.service;
-
 
 ######################################################################
 handle_timezone() {
@@ -53,13 +46,10 @@ handle_gps() {
     ##################################################################
     echo -e "\e[36m    prepare GPS\e[0m";
     ##################################################################
-    echo -e "\e[36m    make boot quiet to serial port: serial0\e[0m";
-    sudo systemctl --now disable serial-getty@serial0.service;
-    sudo systemctl --now disable serial-getty@ttyAMA0.service;
-    sudo systemctl --now disable hciuart.service;
+    echo -e "\e[36m    enable serial port\e[0m";
     tar -ravf $BACKUP_FILE -C / boot/cmdline.txt
-    sudo sed -i -e "s/console=serial0,115200//" /boot/cmdline.txt;
-    sudo sed -i -e "s/console=ttyAMA0,115200//" /boot/cmdline.txt;
+    sudo raspi-config nonint do_serial_hw 0;
+    sudo raspi-config nonint do_serial 1;
 
     ##################################################################
     echo -e "\e[36m    install gpsd\e[0m";
@@ -145,25 +135,9 @@ handle_pps() {
 #        capture_clear           Generate clear events on the trailing edge
 #                                (default off)
 # note, the last listed entry will become /dev/pps0
-# dtoverlay=pps-gpio,gpiopin=4,assert_falling_edge,capture_clear
+#
 #dtoverlay=pps-gpio,gpiopin=7,capture_clear  # /dev/pps1
 dtoverlay=pps-gpio,gpiopin=4,capture_clear  # /dev/pps0
-
-
-#Name:   disable-bt
-#Info:   Disable onboard Bluetooth on Pi 3B, 3B+, 3A+, 4B and Zero W, restoring
-#        UART0/ttyAMA0 over GPIOs 14 & 15.
-#        N.B. To disable the systemd service that initialises the modem so it
-#        doesn't use the UART, use 'sudo systemctl disable hciuart'.
-#Load:   dtoverlay=disable-bt
-#Params: <None>
-dtoverlay=disable-bt
-#alias for backwards compatibility.
-dtoverlay=pi3-disable-bt
-
-
-# Enable UART
-enable_uart=1
 EOF
     }
 
