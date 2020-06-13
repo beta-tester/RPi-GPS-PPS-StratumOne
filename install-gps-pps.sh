@@ -72,8 +72,6 @@ DEVICES="/dev/ttyAMA0 /dev/pps0"
 # Other options you want to pass to gpsd
 GPSD_OPTIONS="-n -r -b"
 EOF
-    sudo systemctl enable gpsd;
-    sudo systemctl restart gpsd;
 
     ##################################################################
     grep -q mod_install_stratum_one /lib/systemd/system/gpsd.socket &>/dev/null || {
@@ -85,6 +83,10 @@ EOF
 ;; mod_install_stratum_one
 EOF
     }
+
+    sudo systemctl daemon-reload;
+    sudo systemctl enable gpsd;
+    sudo systemctl restart gpsd;
 
     [ -f "/etc/dhcp/dhclient-exit-hooks.d/ntp" ] && {
         tar -ravf $BACKUP_FILE -C / etc/dhcp/dhclient-exit-hooks.d/ntp
