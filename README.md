@@ -19,8 +19,8 @@ i did not keeped an eye on network security.
                      ║ i ║       ║server║         ╠═══╗  ║     │
        ╔══════╗      ║ t ╟───eth0╢      ╟GPIO#4───╢PPS║  ╟─────┘
        ║ RPi  ╟──────╢ c ║       ║      ║         ╚═══╩══╝
-       ╚══════╝   ┌──╢ h ╟──┐    ║      ║
-                  │  ╚═══╝  │    ╚══════╝
+       ╚══════╝   ┌──╢ h ╟──┐    ║      ╟GPIO#7╴╴╴╢PPS║  ╟╴╴
+                  │  ╚═══╝  │    ╚══════╝         ╚═══╩══╝
                ╔══╧══╗   ╔══╧══╗
                ║ PC1 ║   ║ PC2 ║
                ╚═════╝   ╚═════╝
@@ -28,19 +28,26 @@ i did not keeped an eye on network security.
 ### overview: path of time source
 (without external NTP servers)
 ```
-╔═══════╗      ╔══════════════════╗
-║ GPS   ╫──RX──╫──┐ KERNEL        ║
-║ ╔═════╣      ║  │               ║                             ╔════════════
-║ ║NMEA─╫──TX──╫─[+]─/dev/serial0─╫───┬───NMEA──x               ║ CHRONY
-║ ╠═════╣      ║                  ║   │                         ║
-║ ║ PPS─╫─GPIO─╫─────/dev/pps0────╫─┬─)─────────────────────────╫──[+]─PPS0─
-╚═╩═════╝      ╚══════════════════╝ │ │ ╔═══════════════╗       ║   │
-                                    │ │ ║ GPSD      ┌───╫─SHM0──╫───┴──NMEA─
-                                    │ │ ╠═════════╗ │   ║       ║
-                                    │ └─╫─NMEA─┬──╫─┘ ┌─╫─SHM1──╫──────PPSx─
-                                    │   ║      │  ║   ├─╫─SHM2──╫──────PPSy─
-                                    └───╫─PPS─[+]─╫───┴─╫─SOCK──╫──────PPSz─
-                                        ╚═════════╩═════╝       ╚════════════
+╔═══════╗       ╔══════════════════╗
+║ GPS   ╫──RX───╫──┐ KERNEL        ║
+║ ╔═════╣       ║  │               ║                                    ╔══════════════
+║ ║NMEA─╫──TX───╫─[+]─/dev/ttyAMA0─╫─────┬───NMEA──x                    ║ CHRONY
+║ ╠═════╣       ║                  ║     │                              ║
+║ ║ PPS─╫─GPIO4─╫─────/dev/pps0────╫───┬─)──────────────────────────────╫──[+]────PPS0
+╚═╩═════╝       ║                  ║   │ │                              ║   │
+  ╠═════╣       ║                  ║   │ │                              ║   │
+║ ║ PPS╴╫╴GPIO7╴╫╴╴╴╴╴/dev/pps1╴╴╴╴╫╴┬╴)╴)╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╫╴╴╴)╴[+]╴PPS1*
+╚═╩═════╝       ╚══════════════════╝ ╵ │ │ ╔════════════════════╗       ║   │  ╵
+                                     ╵ │ │ ║ GPSD               ║       ║   │  ╵
+                                     ╵ │ │ ╠═════════════╗      ║       ║   │  ╵
+                                     ╵ │ └─╫─GPS0──┬──┬──╫──────╫─SHM0──╫───┴──┴──GPSD
+                                     ╵ │   ║       │  |  ║    ┌─╫─SHM1──╫─────────PSM0
+                                     ╵ └───╫─PPS0─[+]─)──╫──┬─┴─╫─SOCK0─╫─────────PST0
+                                     ╵     ║          |  ║ [+]──╫─SHM2──╫─────────PSMD
+                                     ╵    ╴╫╴GPS1╴╴╴╴╴┤  ║  | ┌╴╫╴SHM3╴╴╫╴╴╴╴╴╴╴╴╴PSM1*
+                                     └╴╴╴╴╴╫╴PPS1╴╴╴╴[+]╴╫╴╴┴╴┴╴╫╴SOCK1╴╫╴╴╴╴╴╴╴╴╴PST1*
+                                           ╚═════════════╩══════╝       ╚══════════════
+*) optional second PPS device
 ```
 ## requirements
 
@@ -49,6 +56,7 @@ i did not keeped an eye on network security.
 - SD card
 - working network environment (with a connection to internet for installation only)
 - GPS module with PPS output (Adafruit Ultimate GPS Breakout - 66 channel w/10 Hz updates - Version 3; https://www.adafruit.com/products/746)
+- optionally a second PPS device
 
 ### software:
 - Raspberry Pi OS Buster (2020-05-27 or newer, https://www.raspberrypi.org/downloads/raspbian/)
@@ -69,23 +77,23 @@ done.
 ## NOTES:
 ### note1:
 **PPS** is a high precise pulse, without a time information.<br />
-**NMEA** has date/time information, but with very low precision.
+**GPSD** (GPS0/NMEA)  has date/time information, but with very low precision.
 
 to combine **NMEA** and **PPS** in chrony, there is a specific requirement,<br />
-that NMEA data and PPS signal must have a time offset less than **+/-200ms**.<br />
-otherwise the PPS signal is seen as falsetick and will be rejected by chrony.
+that NMEA data and PPS signal must have a time offset of less than **+/-200ms**<br />
+otherwise the PPS signal is seen as falseticker and will be rejected by chrony.
 
 depending on your GPS device the offset used in my script can be way too off.
 
-to adjust the offset of NMEA edit the file `/etc/chrony/stratum1/10-refclocks.conf`
+to adjust the offset of GPSD edit the file `/etc/chrony/stratum1/10-refclocks.conf`
 
-refclock  SHM 0  refid NMEA  precision 1e-1  **offset _0.475_**  ...
+refclock  SHM 0  refid GPSD  precision 1e-1  **offset _0.475_**  ...
 
 to find the actual offset, you can use gnuplot (already installed by the script)
-and run the plot script 99-calibrate-offset-nmea.gnuplot
+and run the plot script 99-calibrate-offset-gpsd.gnuplot
 to visualise the actual histogramm of the measured offsets.<br />
 ```
-# stop gpsd abd chony, delete all log files, restart chrony and gpsd
+# stop gpsd and chony, delete all log files, restart chrony and gpsd
 # wait few seconds to give time to create a log file,
 # and start the histogram.
 
@@ -93,30 +101,70 @@ sudo systemctl stop gpsd.* && sudo systemctl stop chrony && \
 sudo rm -r /var/log/chrony/*.log && \
 sudo systemctl start chrony && sudo systemctl start gpsd && \
 sleep 10 && \
-gnuplot ~/RPi-GPS-PPS-StratumOne/gnuplot/99-calibrate-offset-nmea.gnuplot
+gnuplot ~/RPi-GPS-PPS-StratumOne/gnuplot/99-calibrate-offset-gpsd.gnuplot
 ```
 the histogram will updated every minute. keep it running for at least 30 minutes.
-the monger you keep it running the better offset value you can find.
+the longer you keep it running the better offset value you can find.
+(but not longer than 24h. every 24h a new log will started from zero)
 
-the x-value of the highest spike in the histogram is the offset value for the NMEA you can 
+the x-value of the highest spike in the histogram is the offset value for the GPSD you can 
 once you got a good offset, you can use your RPi + GPS offline.
 
 ### note2:
-- **NMEA**, has an accuracy of about +/-200ms.<br />
-it is available mostely as soon the GPS finished its cold- or warm- start<br />or immediately, when the device has an internal RTC with backup battery.
+- **GPSD** (NMEA), has a low accuracy of about +/-200ms.
+<br />
+
 - **PPS0**, has the highest accuracy.<br />
-it is passed by the kernel to /dev/pps0.<br />
-in chrony there is a specific timing offset requirement to NMEA, that may cause the PPS to be seen as falsetick and may be rejected by chrony.
-- **PPSx**, is coming from the gpsd service via shared memory and is also a combination of NMEA and PPS, but handled by gpsd service.<br />
-it has a similar accuracy than the PPS direckly.<br />
-gpsd is "_simulating_" PPS internaly, in the case there is no real PPS received on time.
-even there is no real PPS signal coming from the gps device on time, chrony will see the PPSx as trusted time reference.<br />
-for this reason use PPSx, PPSy or PPSz, in case you have a weak intermitten PPS signal coming from the gps device.
-- **PPSy**, is coming also from gpsd service like as PPSx.<br />
-it has the same accuracy as PPSx because they have the same time source.<br />
-- **PPSz**, is coming also from gpsd service like as PPSx but via a socket.<br />
-it has the same accuracy as PPSx because they have the same time source.
+it is passed throught by the kernel to /dev/pps0.<br />
+in chrony there is a specific timing offset requirement to GPSD, that may cause the PPS0 to be seen as falseticker by chrony and may be rejected.
+
+- **PSM0**, is coming from the gpsd service via shared memory and is a combination of PPS0+NMEA, but handled by gpsd service.<br />
+it has a similar accuracy than the PPS0 direckly.
+
+- **PST0**, is used by gpsd socket to provide PPS0+NMEA information.<br />
+it has the same accuracy as PSM0 because they have the same time source.
+<br />
+
+
+- **PSMD**, is coming from the gpsd service via shared memory and is also a combination of PPS0+NMEA(+PPS1), but handled by gpsd service.<br />
+it has a similar accuracy than the PPS0+PPS1 direckly.
+<br />
+
+
+- **PPS1**, has the highest accuracy.<br />
+it is passed throught by the kernel to /dev/pps1.<br />
+in chrony there is a specific timing offset requirement to GPSD, that may cause the PPS1 to be seen as falseticker by chrony and may be rejected.
+
+- **PSM1**, is coming from the gpsd service via shared memory and is also a combination of PPS1+NMEA, but handled by gpsd service.<br />
+it has a similar accuracy than the PPS1 direckly.
+
+- **PST1**, is used by gpsd socket to provide PPS1+NMEA information.<br />
+it has the same accuracy as PSM1 because they have the same time source.
+
+gpsd is "_simulating_" PPS internaly, in the case there is no valid PPS signal received on time from the gps device.<br />
+because of that chrony will not reject the PSMx or PSTx source in this case.<br />
+for this reason use PSMD, PSM0, PST0 (PSM1 PST1) instead of PPS0 or PPS1 as prefered refclock,
+in case you have a weak intermitten PPS signal coming from the gps device.
 
 to properly restart chrony, use:<br />
 `sudo systemctl stop gpsd.* && sudo systemctl restart chrony && sudo systemctl start gpsd`<br />
-but this will disconnect all connected gpsd-clients.
+this will disconnect all connected gpsd-clients.
+
+## enable second PPS:
+to enable a second PPS source (/dev/pps1), please uncomment the prepared lines in the folowing files:
+
+- `/boot/config.txt`<br />
+uncomment the line to:<br />
+`dtoverlay=pps-gpio,gpiopin=7,capture_clear  # /dev/pps1`
+
+- `/etc/default/gpsd`<br />
+uncomment the line to:<br />
+`DEVICES="/dev/ttyAMA0 /dev/pps0 /dev/pps1"`
+
+- `/etc/chrony/stratum1/10-refclocks.conf`<br />
+uncomment the lines to:<br />
+`refclock  PPS /dev/pps1                   refid PPS1  precision 1e-9  poll 3  trust  noselect  lock GPSD`<br />
+`refclock  SHM 3                           refid PSM1  precision 1e-9  poll 3  trust  noselect`<br />
+`refclock  SOCK /var/run/chrony.pps1.sock  refid PST1  precision 1e-9  poll 3  trust  noselect`
+
+and reboot the system.
