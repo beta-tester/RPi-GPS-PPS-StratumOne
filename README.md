@@ -19,8 +19,8 @@ i did not keeped an eye on network security.
                      ║ i ║       ║server║         ╠═══╗  ║     │
        ╔══════╗      ║ t ╟───eth0╢      ╟GPIO#4───╢PPS║  ╟─────┘
        ║ RPi  ╟──────╢ c ║       ║      ║         ╚═══╩══╝
-       ╚══════╝   ┌──╢ h ╟──┐    ║      ╟GPIO#7-----╢PPS║
-                  │  ╚═══╝  │    ╚══════╝           ╚═══╝
+       ╚══════╝   ┌──╢ h ╟──┐    ║      ╟GPIO#7╴╴╴╢PPS║  ╟╴╴
+                  │  ╚═══╝  │    ╚══════╝         ╚═══╩══╝
                ╔══╧══╗   ╔══╧══╗
                ║ PC1 ║   ║ PC2 ║
                ╚═════╝   ╚═════╝
@@ -30,22 +30,24 @@ i did not keeped an eye on network security.
 ```
 ╔═══════╗       ╔══════════════════╗
 ║ GPS   ╫──RX───╫──┐ KERNEL        ║
-║ ╔═════╣       ║  │               ║                                   ╔══════════════
-║ ║NMEA─╫──TX───╫─[+]─/dev/serial0─╫─────┬───NMEA──x                   ║ CHRONY
-║ ╠═════╣       ║                  ║     │                             ║
-║ ║ PPS─╫─GPIO4─╫─────/dev/pps0────╫───┬─)─────────────────────────────╫──[+]────PPS0
-╚═╩═════╝       ║                  ║   │ │                             ║   │
-  ╔═════╗       ║                  ║   │ │                             ║   │
-  ║ PPS-╫-GPIO7-╫-----/dev/pps1----╫-┬-)-)-----------------------------╫---)-[+]-PPS1
-  ╚═════╝       ╚══════════════════╝ | │ │ ╔═══════════════════╗       ║   │  |
-                                     | │ │ ║ GPSD              ║       ║   │  |
-                                     | │ │ ╠═════════════╗     ║       ║   │  |
-                                     | │ └─╫─NMEA──┬──┬──╫─────╫─SHM0──╫───┴──┴──GPSD
-                                     | │   ║       │  |  ║   ┌─╫─SHM1──╫─────────PSM0
-                                     | └───╫─PPS0─[+]─)──╫───┴─╫─SOCK0─╫─────────PST0
-                                     |     ║          |  ║   ┌-╫-SHM2--╫---------PSM1
-                                     └-----╫─PPS1----[+]-╫---┴-╫-SOCK1-╫---------PST1
-                                           ╚═════════════╩═════╝       ╚══════════════
+║ ╔═════╣       ║  │               ║                                    ╔══════════════
+║ ║NMEA─╫──TX───╫─[+]─/dev/ttyAMA0─╫─────┬───NMEA──x                    ║ CHRONY
+║ ╠═════╣       ║                  ║     │                              ║
+║ ║ PPS─╫─GPIO4─╫─────/dev/pps0────╫───┬─)──────────────────────────────╫──[+]────PPS0
+╚═╩═════╝       ║                  ║   │ │                              ║   │
+  ╠═════╣       ║                  ║   │ │                              ║   │
+║ ║ PPS╴╫╴GPIO7╴╫╴╴╴╴╴/dev/pps1╴╴╴╴╫╴┬╴)╴)╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╴╫╴╴╴)╴[+]╴PPS1*
+╚═╩═════╝       ╚══════════════════╝ ╵ │ │ ╔════════════════════╗       ║   │  ╵
+                                     ╵ │ │ ║ GPSD               ║       ║   │  ╵
+                                     ╵ │ │ ╠═════════════╗      ║       ║   │  ╵
+                                     ╵ │ └─╫─NMEA──┬──┬──╫──────╫─SHM0──╫───┴──┴──GPSD
+                                     ╵ │   ║       │  |  ║    ┌─╫─SHM1──╫─────────PSM0
+                                     ╵ └───╫─PPS0─[+]─)──╫──┬─┴─╫─SOCK0─╫─────────PST0
+                                     ╵     ║          |  ║ [+]──╫─SHM2──╫─────────PSMD
+                                     ╵     ║          |  ║  | ┌╴╫╴SHM3╴╴╫╴╴╴╴╴╴╴╴╴PSM1*
+                                     └╴╴╴╴╴╫╴PPS1╴╴╴╴[+]╴╫╴╴┴╴┴╴╫╴SOCK1╴╫╴╴╴╴╴╴╴╴╴PST1*
+                                           ╚═════════════╩══════╝       ╚══════════════
+*) optional second PPS device
 ```
 ## requirements
 
@@ -127,13 +129,17 @@ it has the same accuracy as PSM0 because they have the same time source.
 <br />
 
 
+- **PSMD**, is coming from the gpsd service via shared memory and is also a combination of PPS0+NMEA+(PPS1), but handled by gpsd service.<br />
+it has a similar accuracy than the PPS0 + PPS1 direckly.
+<br />
+
+
 - **PPS1**, has the highest accuracy.<br />
 it is passed throught by the kernel to /dev/pps1.<br />
 in chrony there is a specific timing offset requirement to GPSD, that may cause the PPS1 to be seen as falsetick by chrony and may be rejected.
 
 - **PSM1**, is coming from the gpsd service via shared memory and is also a combination of PPS1+NMEA, but handled by gpsd service.<br />
 it has a similar accuracy than the PPS1 direckly.<br />
-**note**: in case PPS1 does not exist, then it is the same as PSM0.
 
 - **PST1**, is used by gpsd socket to provide PPS1+NMEA information.<br />
 it has the same accuracy as PSM1 because they have the same time source.
