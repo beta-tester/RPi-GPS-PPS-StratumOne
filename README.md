@@ -40,11 +40,11 @@ i did not keeped an eye on network security.
 ╚═╩═════╝       ╚══════════════════╝ ╵ │ │ ╔════════════════════╗       ║   │  ╵
                                      ╵ │ │ ║ GPSD               ║       ║   │  ╵
                                      ╵ │ │ ╠═════════════╗      ║       ║   │  ╵
-                                     ╵ │ └─╫─NMEA──┬──┬──╫──────╫─SHM0──╫───┴──┴──GPSD
+                                     ╵ │ └─╫─GPS0──┬──┬──╫──────╫─SHM0──╫───┴──┴──GPSD
                                      ╵ │   ║       │  |  ║    ┌─╫─SHM1──╫─────────PSM0
                                      ╵ └───╫─PPS0─[+]─)──╫──┬─┴─╫─SOCK0─╫─────────PST0
                                      ╵     ║          |  ║ [+]──╫─SHM2──╫─────────PSMD
-                                     ╵     ║          |  ║  | ┌╴╫╴SHM3╴╴╫╴╴╴╴╴╴╴╴╴PSM1*
+                                     ╵    ╴╫╴GPS1╴╴╴╴╴┤  ║  | ┌╴╫╴SHM3╴╴╫╴╴╴╴╴╴╴╴╴PSM1*
                                      └╴╴╴╴╴╫╴PPS1╴╴╴╴[+]╴╫╴╴┴╴┴╴╫╴SOCK1╴╫╴╴╴╴╴╴╴╴╴PST1*
                                            ╚═════════════╩══════╝       ╚══════════════
 *) optional second PPS device
@@ -77,11 +77,11 @@ done.
 ## NOTES:
 ### note1:
 **PPS** is a high precise pulse, without a time information.<br />
-**GPSD** (**NMEA**)  has date/time information, but with very low precision.
+**GPSD** (GPS0/NMEA)  has date/time information, but with very low precision.
 
 to combine **NMEA** and **PPS** in chrony, there is a specific requirement,<br />
-that NMEA data and PPS signal must have a time offset less than **+/-200ms**.<br />
-otherwise the PPS signal is seen as falsetick and will be rejected by chrony.
+that NMEA data and PPS signal must have a time offset of less than **+/-200ms**<br />
+otherwise the PPS signal is seen as falseticker and will be rejected by chrony.
 
 depending on your GPS device the offset used in my script can be way too off.
 
@@ -116,33 +116,35 @@ once you got a good offset, you can use your RPi + GPS offline.
 
 - **PPS0**, has the highest accuracy.<br />
 it is passed throught by the kernel to /dev/pps0.<br />
-in chrony there is a specific timing offset requirement to GPSD, that may cause the PPS0 to be seen as falsetick by chrony and may be rejected.
+in chrony there is a specific timing offset requirement to GPSD, that may cause the PPS0 to be seen as falseticker by chrony and may be rejected.
 
-- **PSM0**, is coming from the gpsd service via shared memory and is also a combination of PPS0+NMEA, but handled by gpsd service.<br />
-it has a similar accuracy than the PPS0 direckly.<br />
-gpsd is "_simulating_" PPS internaly, in the case there is no valid PPS signal received on time from the gps device.<br />
-because of that chrony will not reject the PSM0 source in this case.<br />
-for this reason use PSM1 or PST0 instead of PPS0, in case you have a weak intermitten PPS signal coming from the gps device.
+- **PSM0**, is coming from the gpsd service via shared memory and is a combination of PPS0+NMEA, but handled by gpsd service.<br />
+it has a similar accuracy than the PPS0 direckly.
 
 - **PST0**, is used by gpsd socket to provide PPS0+NMEA information.<br />
 it has the same accuracy as PSM0 because they have the same time source.
 <br />
 
 
-- **PSMD**, is coming from the gpsd service via shared memory and is also a combination of PPS0+NMEA+(PPS1), but handled by gpsd service.<br />
-it has a similar accuracy than the PPS0 + PPS1 direckly.
+- **PSMD**, is coming from the gpsd service via shared memory and is also a combination of PPS0+NMEA(+PPS1), but handled by gpsd service.<br />
+it has a similar accuracy than the PPS0+PPS1 direckly.
 <br />
 
 
 - **PPS1**, has the highest accuracy.<br />
 it is passed throught by the kernel to /dev/pps1.<br />
-in chrony there is a specific timing offset requirement to GPSD, that may cause the PPS1 to be seen as falsetick by chrony and may be rejected.
+in chrony there is a specific timing offset requirement to GPSD, that may cause the PPS1 to be seen as falseticker by chrony and may be rejected.
 
 - **PSM1**, is coming from the gpsd service via shared memory and is also a combination of PPS1+NMEA, but handled by gpsd service.<br />
-it has a similar accuracy than the PPS1 direckly.<br />
+it has a similar accuracy than the PPS1 direckly.
 
 - **PST1**, is used by gpsd socket to provide PPS1+NMEA information.<br />
 it has the same accuracy as PSM1 because they have the same time source.
+
+gpsd is "_simulating_" PPS internaly, in the case there is no valid PPS signal received on time from the gps device.<br />
+because of that chrony will not reject the PSMx or PSTx source in this case.<br />
+for this reason use PSMD, PSM0, PST0 (PSM1 PST1) instead of PPS0 or PPS1 as prefered refclock,
+in case you have a weak intermitten PPS signal coming from the gps device.
 
 to properly restart chrony, use:<br />
 `sudo systemctl stop gpsd.* && sudo systemctl restart chrony && sudo systemctl start gpsd`<br />
