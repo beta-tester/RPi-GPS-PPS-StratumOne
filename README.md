@@ -149,3 +149,22 @@ in case you have a weak intermitten PPS signal coming from the gps device.
 to properly restart chrony, use:<br />
 `sudo systemctl stop gpsd.* && sudo systemctl restart chrony && sudo systemctl start gpsd`<br />
 this will disconnect all connected gpsd-clients.
+
+## enable second PPS:
+to enable a second PPS source (/dev/pps1), please uncomment the prepared lines in the folowing files:
+
+- `/boot/config.txt`<br />
+uncomment the line to:<br />
+`dtoverlay=pps-gpio,gpiopin=7,capture_clear  # /dev/pps1`
+
+- `/etc/default/gpsd`<br />
+uncomment the line to:<br />
+`DEVICES="/dev/ttyAMA0 /dev/pps0 /dev/pps1"`
+
+- `/etc/chrony/stratum1/10-refclocks.conf`<br />
+uncomment the lines to:<br />
+`refclock  PPS /dev/pps1                   refid PPS1  precision 1e-9  poll 3  trust  noselect  lock GPSD`<br />
+`refclock  SHM 3                           refid PSM1  precision 1e-9  poll 3  trust  noselect`<br />
+`refclock  SOCK /var/run/chrony.pps1.sock  refid PST1  precision 1e-9  poll 3  trust  noselect`
+
+and reboot the system.
