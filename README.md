@@ -42,10 +42,10 @@ i did not keeped an eye on network security.
                                      ╵ │ │ ╠═════════════╗      ║       ║   │  ╵
                                      ╵ │ └─╫─GPS0──┬──┬──╫──────╫─SHM0──╫───┴──┴──GPSD
                                      ╵ │   ║       │  |  ║    ┌─╫─SHM1──╫─────────PSM0
-                                     ╵ └───╫─PPS0─[+]─)──╫──┬─┴─╫─SOCK0─╫─────────PST0
-                                     ╵     ║          |  ║ [+]──╫─SHM2──╫─────────PSMD
-                                     ╵    ╴╫╴GPS1╴╴╴╴╴┤  ║  | ┌╴╫╴SHM3╴╴╫╴╴╴╴╴╴╴╴╴PSM1*
-                                     └╴╴╴╴╴╫╴PPS1╴╴╴╴[+]╴╫╴╴┴╴┴╴╫╴SOCK1╴╫╴╴╴╴╴╴╴╴╴PST1*
+                                     ╵ └───╫─PPS0─[+]─)──╫────┴─╫─SOCK0─╫─────────PST0
+                                     ╵     ║          |  ║     ─╫─SHM2──╫─────────PSMD
+                                     ╵    ╴╫╴GPS1╴╴╴╴╴┤  ║    ┌╴╫╴SHM3╴╴╫╴╴╴╴╴╴╴╴╴PSM1*
+                                     └╴╴╴╴╴╫╴PPS1╴╴╴╴[+]╴╫╴╴╴╴┴╴╫╴SOCK1╴╫╴╴╴╴╴╴╴╴╴PST1*
                                            ╚═════════════╩══════╝       ╚══════════════
 *) optional second PPS device
 ```
@@ -111,7 +111,7 @@ the x-value of the highest spike in the histogram is the offset value for the GP
 once you got a good offset, you can use your RPi + GPS offline.
 
 ### note2:
-- **GPSD** (NMEA), has a low accuracy of about +/-200ms.
+- **GPSD** (NMEA), has a mostly a low accuracy.
 <br />
 
 - **PPS0**, has the highest accuracy.<br />
@@ -140,11 +140,6 @@ it has a similar accuracy than the PPS1 direckly.
 
 - **PST1**, is used by gpsd socket to provide PPS1+NMEA information.<br />
 it has the same accuracy as PSM1 because they have the same time source.
-
-gpsd is "_simulating_" PPS internaly, in the case there is no valid PPS signal received on time from the gps device.<br />
-because of that chrony will not reject the PSMx or PSTx source in this case.<br />
-for this reason use PSMD, PSM0, PST0 (PSM1 PST1) instead of PPS0 or PPS1 as prefered refclock,
-in case you have a weak intermitten PPS signal coming from the gps device.
 
 to properly restart chrony, use:<br />
 `sudo systemctl stop gpsd.* && sudo systemctl restart chrony && sudo systemctl start gpsd`<br />
