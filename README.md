@@ -126,8 +126,8 @@ it has the same accuracy as PSM0 because they have the same time source.
 <br />
 
 
-- **PSMD**, is coming from the gpsd service via shared memory and is also a combination of PPS0+NMEA(+PPS1), but handled by gpsd service.<br />
-it has a similar accuracy than the PPS0+PPS1 direckly.
+- **PSMD**, is coming from the gpsd service via shared memory, handled by gpsd service.<br />
+it has a similar accuracy than the PPS0/PPS1 direckly.
 <br />
 
 
@@ -158,8 +158,8 @@ uncomment the line to:<br />
 
 - `/etc/chrony/stratum1/10-refclocks.conf`<br />
 uncomment the lines to:<br />
-`refclock  PPS /dev/pps1                   refid PPS1  precision 1e-9  poll 3  trust  noselect  lock GPSD`<br />
-`refclock  SHM 3                           refid PSM1  precision 1e-9  poll 3  trust  noselect`<br />
-`refclock  SOCK /var/run/chrony.pps1.sock  refid PST1  precision 1e-9  poll 3  trust  noselect`
+`refclock  PPS /dev/pps1                   refid PPS1  precision 1e-7  poll 3  trust  noselect  lock GPSD`<br />
+`refclock  SHM 3                           refid PSM1  precision 1e-7  poll 3  trust  noselect`<br />
+`refclock  SOCK /var/run/chrony.pps1.sock  refid PST1  precision 1e-7  poll 3  trust  noselect`
 
 and reboot the system.
