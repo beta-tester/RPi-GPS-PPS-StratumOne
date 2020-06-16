@@ -15,7 +15,7 @@ set grid
 
 # plot
 plot \
-"<grep GPSD /var/log/chrony/refclocks.log"  using 1:7  title "GPSD"  with points  axis x1y2  pt 1  ps 0.3  lc "#008000", \
+"<grep GPS0 /var/log/chrony/refclocks.log"  using 1:7  title "GPS0"  with points  axis x1y2  pt 1  ps 0.3  lc "#008000", \
 "<grep PSM0 /var/log/chrony/refclocks.log"  using 1:7  title "PSM0"  with points  axis x1y1  pt 1  ps 0.3  lc "#800080", \
 "<grep PPS0 /var/log/chrony/refclocks.log"  using 1:7  title "PPS0"  with points  axis x1y1  pt 1  ps 0.3  lc "#808000"
 

@@ -1,0 +1,20 @@
+# https://chrony.tuxfamily.org/documentation.html
+# https://gpsd.gitlab.io/gpsd/gpsd-time-service-howto.html#_feeding_chrony_from_gpsd
+# gspd is looking for
+# /var/run/chrony.pps1.sock
+
+
+######################################################################
+# PPS1 (only if you have two pps devices connected)
+
+# PPS: /dev/pps1: Kernel-mode PPS ref-clock for the precise seconds
+refclock  PPS /dev/pps1                   refid PPS1  precision 1e-7  poll 3  trust  noselect  lock PSM1
+
+# SHM(2), gpsd: GPS1 data from shared memory provided by gpsd
+refclock  SHM 2                           refid GPS1  precision 1e-7  poll 3  trust  noselect  offset 0.0
+
+# SHM(3), gpsd: PPS1 data from shared memory provided by gpsd
+refclock  SHM 3                           refid PSM1  precision 1e-7  poll 3  trust  prefer
+
+# SOCK, gpsd: PPS1 data from socket provided by gpsd
+refclock  SOCK /var/run/chrony.pps1.sock  refid PST1  precision 1e-7  poll 3  trust  noselect
