@@ -2,7 +2,7 @@
 
 setup a Raspberry Pi as an Stratum One NTP server.<br />
 it is a private project i have made for myself.<br />
-i did not keeped an eye on network security.
+i did not keep an eye on network security.
 
 **the script will override some existing configurations**<br />
 (a backup of the changed configuration files will be stored to **backup.tar.xz**)
@@ -71,18 +71,24 @@ assuming,
 
 1. run `bash install-gps-pps.sh` to install necessary packages and setup Kernel PPS, GPSD, and NTP with PPS support.
 2. reboot your RPi with `sudo reboot`
-3. **_in case you have a RPi3, RPi3+, RPi4 or RPi0w with a built-in bluetooth adapter, and the script didn't disabled blutooth sucesssfully, please run `sudo raspi-conf` and disable the bluetooth adapter there. otherwise the built-in bluetooth adapter will block the serial port of the GPIO pins._**
+3. **_in case you have a RPi3, RPi3+, RPi4 or RPi0w with a built-in Bluetooth adapter, and the script didn't disabled Bluetooth successfully, please run `sudo raspi-conf` and disable the Bluetooth adapter there. otherwise the built-in Bluetooth adapter will block the serial port of the GPIO pins._**
 
 done.
 
 ## NOTES:
 ### note1:
+the chrony configuration files are in the `/etc/chrony/statum1` folder.
+only files with `*.conf` will be included to the configuration.
+all other files in that folder will be ignored.
+by renaming the files you easily can enable and disable different configuration files.
+
+### note2:
 **PPS** is a high precise pulse, without a time information.<br />
 **GPS** (NMEA)  has date/time information, but with mostly lower precision.
 
 to combine **GPS** and **PPS** in chrony, there is a specific requirement,<br />
 that GPS data and PPS signal must have a time offset of less than **+/-200ms**<br />
-otherwise the PPS signal is seen as falseticker and will be rejected by chrony.
+otherwise the PPS signal is seen as false-ticker and will be rejected by chrony.
 
 depending on your GPS device the offset used in my script can be way too off.
 
@@ -92,9 +98,9 @@ refclock  SHM 0  refid GPS0  precision 1e-1  **offset _0.0_**  ...
 
 to find the actual offset, you can use gnuplot (already installed by the script)
 and run the plot script 99-calibrate-offset-gps0.gnuplot
-to visualise the actual histogramm of the measured offsets.<br />
+to visualize the actual histogram of the measured offsets.<br />
 ```
-# stop gpsd and chony, delete all log files, restart chrony and gpsd
+# stop gpsd and chrony, delete all log files, restart chrony and gpsd
 # wait few seconds to give time to create a log file,
 # and start the histogram.
 
@@ -111,15 +117,15 @@ the longer you keep it running the better offset value you can find.
 the x-value of the highest spike in the histogram is the offset value for the GPS0 you can 
 once you got a good offset, you can use your RPi + GPS offline.
 
-### note2:
+### note3:
 - **GPS0** (NMEA), has a mostly a low accuracy.
 
 - **PPS0**, has the highest accuracy.<br />
 it is passed throught by the kernel to /dev/pps0.<br />
-in chrony there is a specific timing offset requirement to GPSD, that may cause the PPS0 to be seen as falseticker by chrony and may be rejected.
+in chrony there is a specific timing offset requirement to GPSD, that may cause the PPS0 to be seen as false-ticker by chrony and may be rejected.
 
 - **PSM0**, is coming from the gpsd service via shared memory and is a combination of PPS0+NMEA, but handled by gpsd service.<br />
-it has a similar accuracy than the PPS0 direckly.
+it has a similar accuracy than the PPS0 directly.
 
 - **PST0**, is used by gpsd socket to provide PPS0+NMEA information.<br />
 it has the same accuracy as PSM0 because they have the same time source.
@@ -131,7 +137,7 @@ to properly restart chrony, use:<br />
 this will disconnect all connected gpsd-clients.
 
 ## enable second PPS:
-to enable a second PPS source (/dev/pps1), please uncomment the prepared lines in the folowing files:
+to enable a second PPS source (/dev/pps1), please uncomment the prepared lines in the following files:
 
 - `/boot/config.txt`<br />
 uncomment the line to:<br />

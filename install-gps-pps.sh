@@ -193,32 +193,6 @@ install_ptp() {
 
 
 ######################################################################
-## test commands
-######################################################################
-#dmesg | grep pps
-#sudo ppstest /dev/pps0
-#sudo ppswatch -a /dev/pps0
-#
-#sudo gpsd -D 5 -N -n /dev/ttyAMA0 /dev/pps0 -F /var/run/gpsd.sock
-#sudo systemctl stop gpsd.*
-#sudo killall -9 gpsd
-#sudo dpkg-reconfigure -plow gpsd
-#minicom -b 9600 -o -D /dev/ttyAMA0
-#cgps
-#xgps
-#gpsmon
-#ipcs -m
-#ntpshmmon
-#
-#sudo systemctl stop gpsd.* && sudo systemctl restart chrony && sudo systemctl start gpsd && echo Done.
-#
-#chronyc sources
-#chronyc sourcestats
-#chronyc tracking
-#watch -n 10 -p sudo chronyc -m tracking sources sourcestats clients;
-######################################################################
-
-######################################################################
 # kernel config
 ######################################################################
 #nohz=off intel_idle.max_cstate=0
@@ -241,6 +215,32 @@ install_ptp() {
 ## CONFIG_HZ_100 is not set
 #CONFIG_HZ_1000=y
 #CONFIG_HZ=1000
+######################################################################
+
+######################################################################
+## test commands
+######################################################################
+#dmesg | grep pps
+#sudo ppstest /dev/pps*
+#sudo ppswatch -a /dev/pps0
+#
+#sudo gpsd -D 5 -N -n /dev/ttyAMA0 /dev/pps0 -F /var/run/gpsd.sock
+#sudo systemctl stop gpsd.*
+#sudo killall -9 gpsd
+#sudo dpkg-reconfigure -plow gpsd
+#minicom -b 9600 -o -D /dev/ttyAMA0
+#cgps
+#xgps
+#gpsmon
+#ipcs -m
+#ntpshmmon
+#
+#sudo systemctl stop gpsd.* && sudo systemctl restart chrony && sudo systemctl start gpsd && echo Done.
+#
+#chronyc sources
+#chronyc sourcestats
+#chronyc tracking
+#watch -n 10 -p sudo chronyc -m tracking sources sourcestats clients;
 ######################################################################
 
 
