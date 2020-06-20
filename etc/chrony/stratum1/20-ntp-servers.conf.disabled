@@ -1,0 +1,18 @@
+# NTP Servers
+pool  2.debian.pool.ntp.org  iburst  minpoll 4  maxpoll 4
+#pool  europe.pool.ntp.org    iburst  minpoll 4  maxpoll 4
+#pool  de.pool.ntp.org        iburst  minpoll 4  maxpoll 4
+
+
+# some Stratum1 Servers
+# https://www.meinbergglobal.com/english/glossary/public-time-server.htm
+# http://support.ntp.org/bin/view/Servers/StratumOneTimeServers
+
+## Physikalisch-Technische Bundesanstalt (PTB), Braunschweig, Germany
+#server  ptbtime1.ptb.de  iburst  minpoll 4  maxpoll 4
+#server  ptbtime2.ptb.de  iburst  minpoll 4  maxpoll 4
+#server  ptbtime3.ptb.de  iburst  minpoll 4  maxpoll 4
+
+## Royal Observatory of Belgium
+#server  ntp1.oma.be  iburst  minpoll 4  maxpoll 4
+#server  ntp2.oma.be  iburst  minpoll 4  maxpoll 4
