@@ -122,7 +122,8 @@ once you got a good offset, you can use your RPi + GPS offline.
 
 - **PPS0**, has the highest accuracy.<br />
 it is passed throught by the kernel to /dev/pps0.<br />
-in chrony there is a specific timing offset requirement to GPSD, that may cause the PPS0 to be seen as false-ticker by chrony and may be rejected.
+in chrony there is a specific timing offset requirement to PPS, that may cause the PPS0 to be seen as false-ticker by chrony and may be rejected.<br />
+(see note2)
 
 - **PSM0**, is coming from the gpsd service via shared memory and is a combination of PPS0+NMEA, but handled by gpsd service.<br />
 it has a similar accuracy than the PPS0 directly.
@@ -151,3 +152,7 @@ uncomment the line to:<br />
 `/etc/chrony/stratum1/11-refclocks-pps1.conf`
 
 and reboot the system.
+
+**be warned:** as long the kernel of the RPi uses "soft"-interrupts for the second PPS its accuracy is questionable.<br />
+for tests i feeded both gpio-pins with the same signal from the same pps-device (shorted both pins) and noticed a time difference of about 20µs in chrony between /dev/pps0 and /dev/pps1<br />
+see https://www.raspberrypi.org/forums/viewtopic.php?f=28&t=277074
