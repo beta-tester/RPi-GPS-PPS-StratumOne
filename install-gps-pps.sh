@@ -3,7 +3,15 @@
 ######################################################################
 # tested on RPi4B and 2020-05-27-raspios-buster-armhf.zip
 
+
+##################################################################
 BACKUP_FILE=backup.tar.xz
+BACKUP_TRANSFORM=s/^/$(date +%Y-%m-%dT%H_%M_%S)-stratum1\\//
+
+do_backup() {
+    tar -ravf "$BACKUP_FILE" --transform="$BACKUP_TRANSFORM" -C / "$1" &>/dev/null
+}
+
 
 ##################################################################
 SCRIPT_DIR=`dirname "${BASH_SOURCE[0]}"`
@@ -50,7 +58,7 @@ handle_gps() {
     echo -e "\e[36m    setup gpsd\e[0m";
     sudo systemctl stop gpsd.*;
 
-    tar -ravf $BACKUP_FILE -C / etc/default/gpsd
+    do_backup etc/default/gpsd
     cat << EOF | sudo tee /etc/default/gpsd &>/dev/null
 # /etc/default/gpsd
 ## mod_install_stratum_one
@@ -76,7 +84,7 @@ EOF
     ##################################################################
     grep -q mod_install_stratum_one /lib/systemd/system/gpsd.socket &>/dev/null || {
         echo -e "\e[36m    fix gpsd to listen to all connection requests\e[0m";
-        tar -ravf $BACKUP_FILE -C / lib/systemd/system/gpsd.socket
+        do_backup lib/systemd/system/gpsd.socket
         sudo sed /lib/systemd/system/gpsd.socket -i -e "s/^ListenStream=\[::1\]:2947/ListenStream=2947/";
         sudo sed /lib/systemd/system/gpsd.socket -i -e "s/^ListenStream=127.0.0.1:2947/#ListenStream=0.0.0.0:2947/";
         cat << EOF | sudo tee -a /lib/systemd/system/gpsd.socket &>/dev/null
@@ -89,7 +97,7 @@ EOF
     sudo systemctl restart gpsd;
 
     [ -f "/etc/dhcp/dhclient-exit-hooks.d/ntp" ] && {
-        tar -ravf $BACKUP_FILE -C / etc/dhcp/dhclient-exit-hooks.d/ntp
+        do_backup etc/dhcp/dhclient-exit-hooks.d/ntp
         sudo rm -f /etc/dhcp/dhclient-exit-hooks.d/ntp;
     }
 }
@@ -106,7 +114,7 @@ handle_pps() {
     ##################################################################
     grep -q pps-gpio /boot/config.txt &>/dev/null || {
         echo -e "\e[36m    setup config.txt for PPS\e[0m";
-        tar -ravf $BACKUP_FILE -C / boot/config.txt
+        do_backup boot/config.txt
         cat << EOF | sudo tee -a /boot/config.txt &>/dev/null
 [all]
 #########################################
@@ -145,7 +153,7 @@ EOF
     ##################################################################
     grep -q pps-gpio /etc/modules &>/dev/null || {
         echo -e "\e[36m    add pps-gpio to modules for PPS\e[0m";
-        tar -ravf $BACKUP_FILE -C / etc/modules
+        do_backup etc/modules
         echo 'pps-gpio' | sudo tee -a /etc/modules &>/dev/null
     }
 }
@@ -173,7 +181,7 @@ setup_chrony() {
 
     sudo systemctl stop chrony;
 
-    tar -ravf $BACKUP_FILE -C / etc/chrony/chrony.conf
+    do_backup etc/chrony/chrony.conf
     sudo mv /etc/chrony/chrony.conf{,.original}
 
     sudo cp -Rv $SCRIPT_DIR/etc/chrony/* /etc/chrony/;
