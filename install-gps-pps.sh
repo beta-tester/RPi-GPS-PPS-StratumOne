@@ -51,6 +51,9 @@ handle_gps() {
     echo -e "\e[36m    install gpsd\e[0m";
     sudo apt-get -y install gpsd gpsd-clients;
     sudo apt-get -y install --no-install-recommends python-gi-cairo;
+    # optional for python3
+    # copy files from https://gitlab.com/gpsd/gpsd/-/tree/master/gps
+    # to /usr/lib/python3/dist-packages/gps/.
 
     sudo usermod -a -G dialout $USER
 
