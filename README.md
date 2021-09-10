@@ -104,9 +104,9 @@ to visualize the actual histogram of the measured offsets.<br />
 # wait few seconds to give time to create a log file,
 # and start the histogram.
 
-sudo systemctl stop gpsd.* && sudo systemctl stop chrony && \
+sudo systemctl stop --now gpsd.{service,socket} && sudo systemctl stop --now chrony && \
 sudo rm -r /var/log/chrony/*.log && \
-sudo systemctl start chrony && sudo systemctl start gpsd && \
+sudo systemctl start --now chrony && sudo systemctl start --now gpsd && \
 sleep 10 && \
 gnuplot ~/RPi-GPS-PPS-StratumOne/gnuplot/99-calibrate-offset-gps0.gnuplot
 ```
@@ -134,7 +134,11 @@ it has the same accuracy as PSM0 because they have the same time source.
 - **GPS1, PPS1, PSM1, PST1**, same as above, but only for the second GPS/PPS device.
 
 to properly restart chrony, use:<br />
-`sudo systemctl stop gpsd.* && sudo systemctl restart chrony && sudo systemctl start gpsd`<br />
+```
+sudo systemctl stop --now gpsd.{service,socket} && \
+sudo systemctl restart --now chrony && \
+sudo systemctl start --now gpsd
+```
 this will disconnect all connected gpsd-clients.
 
 ## enable second PPS:
