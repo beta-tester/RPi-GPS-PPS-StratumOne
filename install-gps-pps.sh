@@ -59,7 +59,7 @@ handle_gps() {
 
     ##################################################################
     echo -e "\e[36m    setup gpsd\e[0m";
-    sudo systemctl stop gpsd.*;
+    sudo systemctl stop --now gpsd.{service,socket};
 
     do_backup etc/default/gpsd
     cat << EOF | sudo tee /etc/default/gpsd &>/dev/null
@@ -82,6 +82,7 @@ DEVICES="/dev/ttyAMA0 /dev/pps0"
 
 # Other options you want to pass to gpsd
 GPSD_OPTIONS="-n -r -b"
+#GPSD_OPTIONS="-n -r -b -s 115200"
 EOF
 
     ##################################################################
