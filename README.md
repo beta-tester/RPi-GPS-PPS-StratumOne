@@ -86,7 +86,7 @@ by renaming the files you easily can enable and disable different configuration 
 **PPS** is a high precise pulse, without a time information.<br />
 **GPS** (NMEA)  has date/time information, but with mostly lower precision.
 
-to combine **GPS** and **PPS** in chrony, there is a specific requirement,<br />
+to combine **GPS** and **PPS** in chrony, there is a specific requirement, <a href="https://chrony.tuxfamily.org/faq.html#_using_a_pps_reference_clock">(link)</a><br />
 that GPS data and PPS signal must have a time offset of less than **+/-200ms**<br />
 otherwise the PPS signal is seen as false-ticker and will be rejected by chrony.
 
