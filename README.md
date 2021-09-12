@@ -56,11 +56,11 @@ i did not keep an eye on network security.
 - Raspberry Pi (with LAN)
 - SD card
 - working network environment (with a connection to internet for installation only)
-- GPS module with PPS output (Adafruit Ultimate GPS Breakout - 66 channel w/10 Hz updates - Version 3; https://www.adafruit.com/products/746)
+- GPS module with PPS output (e.g. [Adafruit Ultimate GPS Breakout - 66 channel w/10 Hz updates - Version 3](https://www.adafruit.com/products/746)
 - optionally a second PPS device
 
 ### software:
-- Raspberry Pi OS Buster (2020-05-27 or newer, https://www.raspberrypi.org/downloads/raspbian/)
+- Raspberry Pi OS Buster (2020-05-27 or newer, [(link)](https://www.raspberrypi.org/downloads/raspbian/))
 
 ## installation:
 assuming,
@@ -86,7 +86,7 @@ by renaming the files you easily can enable and disable different configuration 
 **PPS** is a high precise pulse, without a time information.<br />
 **GPS** (NMEA)  has date/time information, but with mostly lower precision.
 
-to combine **GPS** and **PPS** in chrony, there is a specific requirement, <a href="https://chrony.tuxfamily.org/faq.html#_using_a_pps_reference_clock">(link)</a><br />
+to combine **GPS** and **PPS** in chrony, there is a specific requirement, [(link)](https://chrony.tuxfamily.org/faq.html#_using_a_pps_reference_clock)<br />
 that GPS data and PPS signal must have a time offset of less than **+/-200ms**<br />
 otherwise the PPS signal is seen as false-ticker and will be rejected by chrony.
 
@@ -159,4 +159,4 @@ and reboot the system.
 
 **be warned:** as long the kernel of the RPi uses "soft"-interrupts for the second PPS its accuracy is questionable.<br />
 for tests i feeded both gpio-pins with the same signal from the same pps-device (shorted both pins) and noticed a time difference of about 20µs in chrony between /dev/pps0 and /dev/pps1<br />
-see https://www.raspberrypi.org/forums/viewtopic.php?f=28&t=277074
+see [(two gpio pins has different delays?)](https://www.raspberrypi.org/forums/viewtopic.php?f=28&t=277074)
