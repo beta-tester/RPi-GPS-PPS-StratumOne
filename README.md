@@ -60,11 +60,11 @@ i did not keep an eye on network security.
 - optionally a second PPS device
 
 ### software:
-- Raspberry Pi OS Buster (2020-05-27 or newer, [(link)](https://www.raspberrypi.org/downloads/raspbian/))
+- Raspberry Pi OS Bullseye (2021-10-30 or newer, [(link)](https://www.raspberrypi.org/downloads/raspbian/))
 
 ## installation:
 assuming,
-- your Raspberry Pi is running Raspberry Pi OS Buster (2020-05-27 or newer),
+- your Raspberry Pi is running Raspberry Pi OS Bullseye (2021-10-30 or newer),
 - and has a proper connection to the internet via LAN.
 - and your SD card is expanded,
 - and you connected the GPS module direct to the RPi's RX/TX pins of the GPIO and the GPS PPS pin to the RPi' GPIO #4
@@ -76,6 +76,8 @@ assuming,
 done.
 
 ## NOTES:
+gpsd v3.20 available on bullseye repository may have an issue with autobaud feature (finding the correct baud rate of the gps device automatically).
+you may have to set the correct baud rate explicitly in the file `/etc/default/gpsd`
 ### note1:
 the chrony configuration files are in the `/etc/chrony/statum1` folder.
 only files with `*.conf` will be included to the configuration.
