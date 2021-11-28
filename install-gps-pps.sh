@@ -50,11 +50,6 @@ handle_gps() {
     ##################################################################
     echo -e "\e[36m    install gpsd\e[0m";
     sudo apt-get -y install gpsd gpsd-clients;
-    sudo apt-get -y install --no-install-recommends python-gi-cairo;
-    # optional for python3
-    # copy files from https://gitlab.com/gpsd/gpsd/-/tree/master/gps
-    # to /usr/lib/python3/dist-packages/gps/.
-
     sudo usermod -a -G dialout $USER
 
     ##################################################################
@@ -149,8 +144,8 @@ dtoverlay=disable-bt
 #                                (default off)
 # note, the last listed entry will become /dev/pps0
 #
-#dtoverlay=pps-gpio,gpiopin=7,capture_clear  # /dev/pps1
-dtoverlay=pps-gpio,gpiopin=4,capture_clear  # /dev/pps0
+#dtoverlay=pps-gpio,gpiopin=7  # /dev/pps1
+dtoverlay=pps-gpio,gpiopin=4  # /dev/pps0
 EOF
     }
 
@@ -266,7 +261,7 @@ disable_ntp;
 install_chrony;
 setup_chrony;
 
-install_ptp;
+#install_ptp;
 
 
 ######################################################################
