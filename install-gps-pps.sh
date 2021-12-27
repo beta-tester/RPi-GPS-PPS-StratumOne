@@ -117,7 +117,7 @@ handle_pps() {
         cat << EOF | sudo tee -a /boot/config.txt &>/dev/null
 [all]
 #########################################
-# https://www.raspberrypi.org/documentation/configuration/config-txt.md
+# https://www.raspberrypi.com/documentation/computers/config_txt.html
 # https://github.com/raspberrypi/firmware/tree/master/boot/overlays
 ## mod_install_stratum_one
 
