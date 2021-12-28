@@ -79,7 +79,7 @@ done.
 gpsd v3.20 available on bullseye repository may have an issue with autobaud feature (finding the correct baud rate of the gps device automatically).<br>
 you may have to set the correct baud rate explicitly in the file `/etc/default/gpsd`<br>
 e.g. for baud rate 115200:<br>
-`GPSD_OPTIONS="-n -r -b -s 115200"`
+`GPSD_OPTIONS="--listenany --nowait --badtime --passive --speed 115200"`
 ### note1:
 the chrony configuration files are in the `/etc/chrony/statum1` folder.
 only files with `*.conf` will be included to the configuration.
