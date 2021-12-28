@@ -87,6 +87,7 @@ EOF
         do_backup lib/systemd/system/gpsd.socket
         sudo sed /lib/systemd/system/gpsd.socket -i -e "s/^ListenStream=\[::1\]:2947/ListenStream=2947/";
         sudo sed /lib/systemd/system/gpsd.socket -i -e "s/^ListenStream=127.0.0.1:2947/#ListenStream=0.0.0.0:2947/";
+        sudo sed /lib/systemd/system/gpsd.socket -i -e "s/^BindIPv6Only=yes/#BindIPv6Only=yes/";
         cat << EOF | sudo tee -a /lib/systemd/system/gpsd.socket &>/dev/null
 ;; mod_install_stratum_one
 EOF
