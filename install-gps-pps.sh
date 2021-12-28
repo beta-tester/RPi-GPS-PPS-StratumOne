@@ -146,8 +146,8 @@ dtoverlay=disable-bt
 #                                (default off)
 # note, the last listed entry will become /dev/pps0
 #
-#dtoverlay=pps-gpio,gpiopin=7  # /dev/pps1
-dtoverlay=pps-gpio,gpiopin=4  # /dev/pps0
+#dtoverlay=pps-gpio,gpiopin=7,capture_clear  # /dev/pps1
+dtoverlay=pps-gpio,gpiopin=4,capture_clear  # /dev/pps0
 EOF
     }
 
