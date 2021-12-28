@@ -76,9 +76,9 @@ DEVICES="/dev/ttyAMA0 /dev/pps0"
 #DEVICES="/dev/ttyAMA0 /dev/pps0 /dev/pps1"
 
 # Other options you want to pass to gpsd
-#GPSD_OPTIONS="-n -r -b"
-GPSD_OPTIONS="-n -r -b -s 9600"
-#GPSD_OPTIONS="-n -r -b -s 115200"
+GPSD_OPTIONS="--listenany --nowait --badtime --passive"
+#GPSD_OPTIONS="--listenany --nowait --badtime --passive --speed 9600"
+#GPSD_OPTIONS="--listenany --nowait --badtime --passive --speed 115200"
 EOF
 
     ##################################################################
