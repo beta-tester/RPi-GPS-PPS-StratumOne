@@ -67,7 +67,8 @@ assuming,
 - your Raspberry Pi is running Raspberry Pi OS Bullseye (2021-10-30 or newer),
 - and has a proper connection to the internet via LAN.
 - and your SD card is expanded,
-- and you connected the GPS module direct to the RPi's RX/TX pins of the GPIO and the GPS PPS pin to the RPi' GPIO #4
+- and you connected the GPS module direct to the RPi's RX/TX pins of the GPIO and the GPS PPS pin to the RPi' GPIO 4<br>
+  (you can use other GPIO pins for PPS by changing `dtoverlay=pps-gpio,gpiopin=...` in `/boot/config.tyt`)
 
 1. run `bash install-gps-pps.sh` to install necessary packages and setup Kernel PPS, GPSD, and NTP with PPS support.
 2. reboot your RPi with `sudo reboot`
