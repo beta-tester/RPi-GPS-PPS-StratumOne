@@ -110,7 +110,7 @@ to visualize the actual histogram of the measured offsets.<br />
 # and start the histogram.
 
 sudo systemctl stop --now gpsd.{service,socket} && sudo systemctl stop --now chrony && \
-sudo rm -r /var/log/chrony/*.log && \
+sudo rm -f /var/log/chrony/*.log && \
 sudo systemctl start --now chrony && sudo systemctl start --now gpsd && \
 sleep 10 && \
 gnuplot ~/RPi-GPS-PPS-StratumOne/gnuplot/99-calibrate-offset-gps0.gnuplot
