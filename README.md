@@ -122,6 +122,10 @@ the longer you keep it running the better offset value you can find.
 the x-value of the highest spike in the histogram is the offset value for the GPS0 you can 
 once you got a good offset, you can use your RPi + GPS offline.
 
+for more information, see also:<br />
+`/etc/chrony/chrony.conf`<br />
+`/etc/chrony/statum1/99-calibrate-offset.gps0`
+
 ### note3:
 - **GPS0** (NMEA), has a mostly a low accuracy.
 
@@ -131,7 +135,8 @@ in chrony there is a specific timing offset requirement to PPS, that may cause t
 (see note2)
 
 - **PSM0**, is coming from the gpsd service via shared memory and is a combination of PPS0+NMEA, but handled by gpsd service.<br />
-it has a similar accuracy than the PPS0 directly.
+it has a similar accuracy as the PPS0 directly, but does not require the specific requirements as noted under note 2, because gpsd knows how the relationship of this.<br />
+it is very accurate and does not need manual calibration. that's why it is selected by me as prefered refclock in `10-refclocks-pps0.conf`.
 
 - **PST0**, is used by gpsd socket to provide PPS0+NMEA information.<br />
 it has the same accuracy as PSM0 because they have the same time source.
