@@ -4,6 +4,8 @@
 # 2. measure the offset of the GPS0 data
 # 2.1. for graphical desktop only, run:
 #    :~ $ gnuplot ~/RPi-GPS-PPS-StratumOne/gnuplot/99-calibrate-offset-gps0.gnuplot
+#    alternative for console / non-desktop, run:
+#    :~ $ gnuplot -e "set terminal dumb" ~/RPi-GPS-PPS-StratumOne/gnuplot/99-calibrate-offset-gps0.gnuplot
 # 2.2. for console only, run:
 #    :~ $ gpspipe -ru | grep --line-buffered GGA | cut -b 20-26
 # 3. change the offset value to bring down the offset of GPS0 lower than +/-200 ms
