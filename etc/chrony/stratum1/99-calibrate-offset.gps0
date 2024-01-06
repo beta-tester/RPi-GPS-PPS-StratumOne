@@ -13,7 +13,7 @@
 # 4. delete old log files and restart gpsd and chrony with:
 #    :~ $ sudo systemctl stop --now gpsd.{service,socket} && \
 #         sudo systemctl stop chrony && \
-#         sudo rm -r /var/log/chrony/*.log && \
+#         sudo rm -f /var/log/chrony/*.log && \
 #         sudo systemctl start chrony && \
 #         sudo systemctl start gpsd
 ################################################################################
