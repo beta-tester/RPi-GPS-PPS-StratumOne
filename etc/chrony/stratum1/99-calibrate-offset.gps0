@@ -41,11 +41,11 @@ pool  2.debian.pool.ntp.org  iburst minpoll 4  maxpoll 4
 
 ################################################################################
 # some random stratum one server from
-# http://support.ntp.org/bin/view/Servers/StratumOneTimeServers
+# https://support.ntp.org/Servers/StratumOneTimeServers
 ################################################################################
 server  byrpi1.dynu.net          iburst  minpoll 4  maxpoll 4
 server  chronos.asda.gr          iburst  minpoll 4  maxpoll 4
-server  ntp1.vniiftri.ru         iburst  minpoll 4  maxpoll 4
+server  ntp1.recro.ae            iburst  minpoll 4  maxpoll 4
 server  ntp.silvertree.org       iburst  minpoll 4  maxpoll 4
 server  lrte.ntp.ifsc.usp.br     iburst  minpoll 4  maxpoll 4
 server  ntp1.torix.ca            iburst  minpoll 4  maxpoll 4
@@ -53,7 +53,5 @@ server  hora.roa.es              iburst  minpoll 4  maxpoll 4
 server  ntp1.dyn.vranetworks.mx  iburst  minpoll 4  maxpoll 4
 server  sth1.ntp.se              iburst  minpoll 4  maxpoll 4
 server  ntp1.sptime.se           iburst  minpoll 4  maxpoll 4
-server  ntp.ntp-servers.com      iburst  minpoll 4  maxpoll 4
 server  ntp1.itcompliance.dk     iburst  minpoll 4  maxpoll 4
 server  clock1.infonet.ee        iburst  minpoll 4  maxpoll 4
-server  ntp1.leontp.com          iburst  minpoll 4  maxpoll 4
