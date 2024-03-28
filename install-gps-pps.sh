@@ -3,6 +3,7 @@
 ######################################################################
 # tested on RPi4B and 2021-10-30-raspios-bullseye-armhf.zip
 
+[ -e '/boot/firmware/' ] && BOOT_FIRMWARE=firmware
 
 ##################################################################
 BACKUP_FILE=backup.tar.xz
@@ -113,10 +114,10 @@ handle_pps() {
     sudo apt-get -y install pps-tools;
 
     ##################################################################
-    grep -q pps-gpio /boot/config.txt &>/dev/null || {
+    grep -q pps-gpio /boot/$BOOT_FIRMWARE/config.txt &>/dev/null || {
         echo -e "\e[36m    setup config.txt for PPS\e[0m";
-        do_backup boot/config.txt
-        cat << EOF | sudo tee -a /boot/config.txt &>/dev/null
+        do_backup boot/$BOOT_FIRMWARE/config.txt
+        cat << EOF | sudo tee -a /boot/$BOOT_FIRMWARE/config.txt &>/dev/null
 [all]
 #########################################
 # https://www.raspberrypi.com/documentation/computers/config_txt.html
