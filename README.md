@@ -70,9 +70,13 @@ assuming,
 - and you connected the GPS module direct to the RPi's RX/TX pins of the GPIO and the GPS PPS pin to the RPi' GPIO 4<br>
   (you can use other GPIO pins for PPS by changing `dtoverlay=pps-gpio,gpiopin=...` in `/boot/config.txt`)
 
-1. run `bash install-gps-pps.sh` to install necessary packages and setup Kernel PPS, GPSD, and NTP with PPS support.
-2. reboot your RPi with `sudo reboot`
-3. **_in case you have a RPi3, RPi3+, RPi4 or RPi0w with a built-in Bluetooth adapter, and the script didn't disabled Bluetooth successfully, please run `sudo raspi-conf` and disable the Bluetooth adapter there. otherwise the built-in Bluetooth adapter will block the serial port of the GPIO pins._**
+0. clone this repository with:
+   `git clone https://github.com/beta-tester/RPi-GPS-PPS-StratumOne.git`<br>
+   and change into the folder where it was cloned to (e.g.: `RPi-GPS-PPS-StratumOne`).<br>
+   (in case it fails, because `git` is not installed yet, please do `sudo apt update; sudo apt install git` and try to clone the repository again)
+2. run `bash install-gps-pps.sh` to install necessary packages and setup Kernel PPS, GPSD, and NTP with PPS support.
+3. reboot your RPi with `sudo reboot`
+4. **_in case you have a RPi3, RPi3+, RPi4 or RPi0w with a built-in Bluetooth adapter, and the script didn't disabled Bluetooth successfully, please run `sudo raspi-conf` and disable the Bluetooth adapter there. otherwise the built-in Bluetooth adapter will block the serial port of the GPIO pins._**
 
 done.
 
