@@ -45,7 +45,9 @@ handle_gps() {
     echo -e "\e[36m    prepare GPS\e[0m";
     ##################################################################
     echo -e "\e[36m    setup serial port: /dev/ttyAMA0\e[0m";
-    sudo raspi-config nonint do_serial 2;
+    #sudo raspi-config nonint do_serial 2;
+    sudo raspi-config nonint do_serial_hw 0
+    sudo raspi-config nonint do_serial_cons 1
     sudo systemctl disable --now hciuart;
 
     ##################################################################
